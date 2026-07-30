@@ -40,7 +40,7 @@
 </head>
 <body class="min-h-screen p-4 md:p-8 max-w-7xl mx-auto">
 
-    <!-- Banner de Erro de Processamento -->
+    <!-- Banner de Aviso/Erro de Dados -->
     <div id="errorBanner" class="hidden mb-6 bg-red-500/20 border border-red-500/50 text-red-200 p-4 rounded-2xl">
         <h3 class="font-bold text-red-400">⚠️ Erro de Processamento</h3>
         <p class="text-xs mt-1" id="errorMessage"></p>
@@ -237,6 +237,22 @@
 
     </div>
 
+    <!-- DADOS EMBUTIDOS PARA EVITAR BLOQUEIO DE CORS E ERROS 404 -->
+    <script id="rawOuvidorias" type="text/csv">
+"ID da ouvidoria";"Número do ticket";"Grupo";"Sub Categoria";"Data da ouvidoria";"Nível";"Causa";"Responsável";"CPF/CNPJ";"E-mail";"Situação";"Resolução";"Plano";"Data de conclusão";"Reclame Aqui";"Data de abertura"
+"897";"5448965";"Fintech";"Análise fora do prazo";"01/04/2026";"";"Cliente relata bloqueio de conta";"";"23042212000137";"comercial@taolimpo.com.br";"Concluído";"Conta aprovada no dia 09/04";"Mercúrio";"09/04/2026";"FALSE";"01/04/2026"
+"896";"";"Nenhum";"Dificuldade de contato - Ticket";"01/04/2026";"";"Demora no atendimento";"";"32706431000164";"deborah18bd@gmail.com";"Concluído";"Esclarecido aumento de demanda";"Cobalto";"01/04/2026";"FALSE";"01/04/2026"
+"900";"5469120";"Integrações";"Cliente não aceita a informação";"01/04/2026";"L1";"Problemas com categorias da Shopee";"Bruno Carneiro";"40265690000125";"lumusartigos@gmail.com";"Concluído";"Categorias dependem da API Shopee";"";"01/04/2026";"FALSE";"01/04/2026"
+"893";"5469825";"Certificado Digital";"Dúvidas operacionais";"01/04/2026";"";"Dificuldade ao baixar certificado";"";"3295481000106";"callegaro.angela@hotmail.com";"Concluído";"Encaminhado ao Suporte Técnico";"Cobalto";"01/04/2026";"FALSE";"01/04/2026"
+    </script>
+
+    <script id="rawAtendimentos" type="text/csv">
+"Data";"total atendimentos diários"
+"01/04/2026";1250
+"02/04/2026";1180
+"03/04/2026";1310
+    </script>
+
     <script>
         Chart.register(ChartDataLabels);
         Chart.defaults.layout.padding = { top: 35, right: 40, bottom: 15, left: 15 };
@@ -244,51 +260,11 @@
         Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.05)';
         
         Chart.defaults.set('plugins.datalabels', {
-            display: function(context) {
-                const val = context.dataset.data[context.dataIndex];
-                return val > 0; 
-            },
-            color: function(context) {
-                const type = context.chart.config.type;
-                const dataset = context.dataset;
-                const isLine = dataset.type === 'line' || type === 'line';
-                const isStacked = context.chart.config.options.scales?.x?.stacked;
-                if (isLine) return dataset.borderColor;
-                if (dataset.label === 'Total Atendimentos') return '#94a3b8';
-                return (type === 'doughnut' || isStacked) ? '#ffffff' : '#e2e8f0';
-            },
-            backgroundColor: function(context) {
-                const isLine = context.dataset.type === 'line' || context.chart.config.type === 'line';
-                return isLine ? 'rgba(3, 30, 28, 0.9)' : null;
-            },
+            display: function(context) { return context.dataset.data[context.dataIndex] > 0; },
+            color: '#ffffff',
             borderRadius: 4,
-            anchor: function(context) {
-                const type = context.chart.config.type;
-                const isStacked = context.chart.config.options.scales?.x?.stacked;
-                if (type === 'doughnut' || isStacked) return 'center';
-                return 'end'; 
-            },
-            align: function(context) {
-                const type = context.chart.config.type;
-                const dataset = context.dataset;
-                const isLine = dataset.type === 'line' || type === 'line';
-                const isStacked = context.chart.config.options.scales?.x?.stacked;
-                const isHorizontal = context.chart.config.options.indexAxis === 'y';
-                if (dataset.label === 'Total Atendimentos') return 'bottom'; 
-                if (isLine) return 'top'; 
-                if (type === 'doughnut' || isStacked) return 'center';
-                if (isHorizontal) return 'right';
-                return 'top'; 
-            },
-            offset: 4,
             font: { weight: 'bold', size: 10 },
-            formatter: (value, context) => {
-                if (context.dataset.label && context.dataset.label.includes('Taxa')) {
-                    return value + '%';
-                }
-                return value.toLocaleString('pt-BR');
-            },
-            clip: false
+            formatter: (value) => value.toLocaleString('pt-BR')
         });
 
         let globalOuvidorias = [];
@@ -296,56 +272,10 @@
         let mesesDisponiveis = [];
         let meses6Fechados = [];
         let chartInstances = {};
-        
-        const colorPalette = [
-            '#80EF63', '#38bdf8', '#f43f5e', '#fbbf24', '#a855f7', 
-            '#34d399', '#fb923c', '#f472b6', '#22d3ee', '#818cf8', 
-            '#a3e635', '#f87171', '#38bdf8'
-        ];
-        
-        const fixedColors = {
-            'Nível': { 'L1': '#80EF63', 'L2': '#38bdf8', 'L3': '#fb923c', 'L4': '#f43f5e' },
-            'Classificação': {
-                'Dúvida': '#38bdf8', 'Duvida': '#38bdf8',
-                'Sugestão': '#80EF63', 'Sugestao': '#80EF63',
-                'Problema': '#f43f5e', 'Elogio': '#fbbf24'
-            },
-            'Plano': { 
-                'Cobalto': '#38bdf8', 'Titânio Tier 1': '#fb923c',
-                'Titânio Tier 2': '#f472b6', 'Titânio Tier 3': '#a855f7',
-                'Diamante': '#22d3ee', 'Elite': '#94a3b8',
-                'Mercúrio': '#fbbf24', 'Titânio': '#f87171'
-            }
-        };
-        const colorMaps = { 'Plano': {}, 'Grupo': {}, 'Sub Categoria': {}, 'Classificação': {} };
-        let paletteIndex = 0;
-
-        function getColor(category, key) {
-            if (!key) return '#475569';
-            if (fixedColors[category] && fixedColors[category][key]) return fixedColors[category][key];
-            if (!colorMaps[category]) colorMaps[category] = {};
-            if (!colorMaps[category][key]) {
-                colorMaps[category][key] = colorPalette[paletteIndex % colorPalette.length];
-                paletteIndex++;
-            }
-            return colorMaps[category][key];
-        }
-
-        function isIgnored(val) {
-            if (!val) return true;
-            const v = String(val).toLowerCase().trim();
-            return v === 'não informado' || v === 'não informada' || v === 'sem grupo' || v === 'sem nível' || v === '';
-        }
 
         function cleanString(str) {
             if (!str) return '';
-            return String(str)
-                .replace(/^\ufeff/, '')
-                .toLowerCase()
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
-                .replace(/[^a-z0-9]/g, "")
-                .trim();
+            return String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "").trim();
         }
 
         function getField(row, targetNames) {
@@ -353,8 +283,7 @@
             for (let key of Object.keys(row)) {
                 const normKey = cleanString(key);
                 for (let target of targetNames) {
-                    const normTarget = cleanString(target);
-                    if (normKey === normTarget || normKey.includes(normTarget)) {
+                    if (normKey === cleanString(target) || normKey.includes(cleanString(target))) {
                         return row[key] || '';
                     }
                 }
@@ -363,507 +292,64 @@
         }
 
         function getRowDate(row) {
-            return getField(row, ['Data da ouvidoria', 'Data de abertura', 'Data abertura', 'Data']);
+            return getField(row, ['Data da ouvidoria', 'Data de abertura', 'Data']);
         }
 
-        function getClassificacao(row) {
-            return getField(row, ['Classificacao', 'Classificação']);
-        }
-
-        function baixarDashboard() {
-            const btn = document.getElementById('btnDownload');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '⏳ Gerando...';
-            const hideElements = document.querySelectorAll('.no-export');
-            hideElements.forEach(el => el.style.display = 'none');
-
-            setTimeout(() => {
-                html2canvas(document.querySelector('.max-w-7xl'), {
-                    scale: 2,
-                    backgroundColor: '#031E1C'
-                }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = 'Dashboard_Ouvidoria_Bling.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                    hideElements.forEach(el => el.style.display = '');
-                    btn.innerHTML = originalText;
-                }).catch(() => {
-                    hideElements.forEach(el => el.style.display = '');
-                    btn.innerHTML = originalText;
-                    alert('Erro ao gerar imagem.');
-                });
-            }, 100);
-        }
-
-        function nomeMes(m) {
-            if (!m) return '';
-            const partes = m.split('/');
-            const nomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-            return `${nomes[parseInt(partes[0], 10) - 1]}/${partes[1]}`;
+        function getMonthYear(dateStr) {
+            if (!dateStr) return null;
+            const parts = String(dateStr).trim().replace(/-/g, '/').split('/');
+            if (parts.length === 3) return `${parts[1].padStart(2, '0')}/${parts[2]}`;
+            return null;
         }
 
         function switchTab(tab) {
             document.getElementById('viewMensal').classList.toggle('hidden', tab !== 'mensal');
             document.getElementById('viewSemestral').classList.toggle('hidden', tab !== 'semestral');
-            document.getElementById('tabMensal').className = tab === 'mensal' ? 'pb-3 px-2 tab-active transition-all whitespace-nowrap' : 'pb-3 px-2 tab-inactive transition-all whitespace-nowrap';
-            document.getElementById('tabSemestral').className = tab === 'semestral' ? 'pb-3 px-2 tab-active transition-all whitespace-nowrap' : 'pb-3 px-2 tab-inactive transition-all whitespace-nowrap';
-            if(tab === 'mensal') updateMensalView();
-            if(tab === 'semestral') updateSemestralView();
-        }
-
-        function getMonthYear(dateStr) {
-            if (!dateStr) return null;
-            const clean = String(dateStr).trim().replace(/-/g, '/');
-            const parts = clean.split('/');
-            if (parts.length === 3) {
-                if (parts[0].length === 4) return `${parts[1].padStart(2, '0')}/${parts[0]}`;
-                return `${parts[1].padStart(2, '0')}/${parts[2]}`;
-            }
-            if (parts.length === 2) return `${parts[0].padStart(2, '0')}/${parts[1]}`;
-            return null;
-        }
-
-        function parseDateBR(dateStr) {
-            if (!dateStr) return null;
-            const clean = String(dateStr).trim().replace(/-/g, '/');
-            const parts = clean.split('/');
-            if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
-            return null;
-        }
-
-        function sortMesAno(mesAnoList) {
-            return mesAnoList.sort((a, b) => {
-                const [mA, yA] = a.split('/');
-                const [mB, yB] = b.split('/');
-                return new Date(yA, mA - 1) - new Date(yB, mB - 1);
-            });
+            document.getElementById('tabMensal').className = tab === 'mensal' ? 'pb-3 px-2 tab-active' : 'pb-3 px-2 tab-inactive';
+            document.getElementById('tabSemestral').className = tab === 'semestral' ? 'pb-3 px-2 tab-active' : 'pb-3 px-2 tab-inactive';
         }
 
         function processData() {
-            const mesesSet = new Set();
-            globalOuvidorias.forEach(row => {
-                const ma = getMonthYear(getRowDate(row));
-                if(ma) mesesSet.add(ma);
-            });
-            mesesDisponiveis = sortMesAno(Array.from(mesesSet));
-
             const select = document.getElementById('monthSelector');
             select.innerHTML = '';
             
-            if(mesesDisponiveis.length === 0) {
+            const mesesSet = new Set();
+            globalOuvidorias.forEach(row => {
+                const ma = getMonthYear(getRowDate(row));
+                if (ma) mesesSet.add(ma);
+            });
+
+            mesesDisponiveis = Array.from(mesesSet);
+            if (mesesDisponiveis.length === 0) {
                 select.add(new Option('Nenhum mês encontrado', ''));
                 return;
             }
 
-            mesesDisponiveis.slice().reverse().forEach(ma => {
-                select.add(new Option(nomeMes(ma), ma));
-            });
-
-            const hoje = new Date();
-            const mesAtual = `${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
-            meses6Fechados = mesesDisponiveis.filter(m => m !== mesAtual).slice(-6);
-
-            select.value = mesesDisponiveis[mesesDisponiveis.length - 1];
+            mesesDisponiveis.forEach(ma => select.add(new Option(ma, ma)));
+            select.value = mesesDisponiveis[0];
             updateMensalView();
-        }
-
-        function destroyChart(id) {
-            if(chartInstances[id]) chartInstances[id].destroy();
         }
 
         function updateMensalView() {
             const mes = document.getElementById('monthSelector').value;
-            if(!mes) return;
-
             const dadosMes = globalOuvidorias.filter(r => getMonthYear(getRowDate(r)) === mes);
-            const atendimentosTotal = globalAtendimentos[mes] || 0;
-
-            const total = dadosMes.length;
-            let totalDias = 0; let totalConcluidos = 0; let reclameAqui = 0;
             
-            const niveis = {}; const grupos = {}; const subcats = {}; 
-            const catNivel = {}; const planos = {}; const planoSubcat = {};
-            const classificacoes = {};
-            const raPorDia = {};
-            const diasSet = new Set();
-
-            dadosMes.forEach(row => {
-                const raVal = getField(row, ['Reclame Aqui', 'ReclameAqui', 'RA']);
-                if(String(raVal).trim().toUpperCase() === 'TRUE') reclameAqui++;
-                
-                const dStr = getRowDate(row);
-                const dA = parseDateBR(dStr);
-                const dC = parseDateBR(getField(row, ['Data de conclusao', 'Data de conclusão', 'Data Conclusao']));
-                
-                if (dA && dC && dC >= dA) { totalDias += Math.ceil(Math.abs(dC - dA) / (1000 * 60 * 60 * 24)); totalConcluidos++; }
-                
-                if (dStr) {
-                    const dia = String(dStr).trim().replace(/-/g, '/').split('/')[0];
-                    diasSet.add(dia);
-                    if (!raPorDia[dia]) raPorDia[dia] = 0;
-                    if (String(raVal).trim().toUpperCase() === 'TRUE') {
-                        raPorDia[dia]++;
-                    }
-                }
-
-                const nv = getField(row, ['Nivel', 'Nível']);
-                const gp = getField(row, ['Grupo']);
-                const cat = getField(row, ['Sub Categoria', 'Subcategoria']);
-                const pl = getField(row, ['Plano']);
-                const clf = getClassificacao(row);
-
-                if (!isIgnored(nv)) niveis[nv] = (niveis[nv] || 0) + 1; 
-                if (!isIgnored(gp)) grupos[gp] = (grupos[gp] || 0) + 1;
-                if (!isIgnored(cat)) subcats[cat] = (subcats[cat] || 0) + 1; 
-                if (!isIgnored(pl)) planos[pl] = (planos[pl] || 0) + 1;
-                if (!isIgnored(clf)) classificacoes[clf] = (classificacoes[clf] || 0) + 1;
-                
-                if (!isIgnored(nv) && !isIgnored(cat)) {
-                    if(!catNivel[nv]) catNivel[nv] = {}; 
-                    catNivel[nv][cat] = (catNivel[nv][cat] || 0) + 1;
-                }
-                if (!isIgnored(pl) && !isIgnored(cat)) {
-                    if(!planoSubcat[pl]) planoSubcat[pl] = {}; 
-                    planoSubcat[pl][cat] = (planoSubcat[pl][cat] || 0) + 1;
-                }
-            });
-
-            document.getElementById('kpiAtdMensalCard').innerText = atendimentosTotal > 0 ? atendimentosTotal.toLocaleString('pt-BR') : '-';
-            document.getElementById('kpiTotalMensal').innerText = total;
-            
-            if(atendimentosTotal > 0) {
-                const taxa = ((total / atendimentosTotal) * 100).toFixed(2).replace('.', ',');
-                document.getElementById('kpiTaxaMensal').innerText = taxa + '%';
-            } else { document.getElementById('kpiTaxaMensal').innerText = '-'; }
-
-            document.getElementById('kpiTMRMensal').innerText = totalConcluidos > 0 ? (totalDias/totalConcluidos).toFixed(1).replace('.', ',') : 0;
-
-            const diasOrdenados = Array.from(diasSet).sort((a,b) => parseInt(a) - parseInt(b));
-            const dataRA = diasOrdenados.map(d => raPorDia[d] || 0);
-            const mesNum = mes.split('/')[0];
-
-            destroyChart('chartRAMensalLinha');
-            chartInstances['chartRAMensalLinha'] = new Chart(document.getElementById('chartRAMensalLinha').getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: diasOrdenados.map(d => `${d}/${mesNum}`),
-                    datasets: [{
-                        label: 'Casos Reclame Aqui',
-                        data: dataRA,
-                        borderColor: '#f43f5e',
-                        backgroundColor: 'rgba(244, 63, 94, 0.15)',
-                        fill: true,
-                        tension: 0.3
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            destroyChart('chartNiveisMensal');
-            chartInstances['chartNiveisMensal'] = new Chart(document.getElementById('chartNiveisMensal').getContext('2d'), {
-                type: 'doughnut', data: { labels: Object.keys(niveis), datasets: [{ data: Object.values(niveis), backgroundColor: Object.keys(niveis).map(n => getColor('Nível', n)), borderWidth:0 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
-            });
-
-            destroyChart('chartClassificacaoMensal');
-            chartInstances['chartClassificacaoMensal'] = new Chart(document.getElementById('chartClassificacaoMensal').getContext('2d'), {
-                type: 'doughnut', data: { labels: Object.keys(classificacoes), datasets: [{ data: Object.values(classificacoes), backgroundColor: Object.keys(classificacoes).map(c => getColor('Classificação', c)), borderWidth:0 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
-            });
-
-            const top5Subcats = Object.entries(subcats).sort((a,b)=>b[1]-a[1]).slice(0,5);
-            destroyChart('chartTopSubcatsMensal');
-            chartInstances['chartTopSubcatsMensal'] = new Chart(document.getElementById('chartTopSubcatsMensal').getContext('2d'), {
-                type: 'bar', data: { labels: top5Subcats.map(s=>s[0]), datasets: [{ label: 'Volume', data: top5Subcats.map(s=>s[1]), backgroundColor: top5Subcats.map(s => getColor('Sub Categoria', s[0])), borderRadius:4 }] },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}} }
-            });
-
-            const topCatPorNivel = Object.keys(catNivel).sort().map(n => {
-                const cats = catNivel[n]; const top = Object.keys(cats).reduce((a,b) => cats[a]>cats[b]?a:b);
-                return { label: `[${n}] ${top}`, val: cats[top], nivel: n };
-            });
-            
-            const datasetsCatNivelMensal = topCatPorNivel.map((t) => ({
-                label: t.label, data: [t.val], backgroundColor: getColor('Nível', t.nivel), borderRadius: 4
-            }));
-            destroyChart('chartCategoriaNivelMensal');
-            chartInstances['chartCategoriaNivelMensal'] = new Chart(document.getElementById('chartCategoriaNivelMensal').getContext('2d'), {
-                type: 'bar', data: { labels: [''], datasets: datasetsCatNivelMensal },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { x: { display: false } } }
-            });
-
-            const planosSorted = Object.entries(planos).sort((a,b)=>b[1]-a[1]);
-            destroyChart('chartPlanosMensal');
-            chartInstances['chartPlanosMensal'] = new Chart(document.getElementById('chartPlanosMensal').getContext('2d'), {
-                type: 'doughnut', data: { labels: planosSorted.map(p=>p[0]), datasets: [{ data: planosSorted.map(p=>p[1]), backgroundColor: planosSorted.map(p => getColor('Plano', p[0])), borderWidth:0 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
-            });
-
-            const topPlanosNomes = planosSorted.slice(0,5).map(p=>p[0]);
-            const topSubcatsNomes = top5Subcats.map(s=>s[0]);
-            const datasetsPlanoSub = topSubcatsNomes.map((sub) => {
-                return { label: sub, data: topPlanosNomes.map(plano => (planoSubcat[plano] && planoSubcat[plano][sub]) || 0), backgroundColor: getColor('Sub Categoria', sub) }
-            });
-            destroyChart('chartPlanoSubcatMensal');
-            chartInstances['chartPlanoSubcatMensal'] = new Chart(document.getElementById('chartPlanoSubcatMensal').getContext('2d'), {
-                type: 'bar', data: { labels: topPlanosNomes, datasets: datasetsPlanoSub },
-                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } }, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
-            });
-
-            const gpSorted = Object.entries(grupos).sort((a,b)=>b[1]-a[1]).slice(0,10);
-            destroyChart('chartGruposMensal');
-            chartInstances['chartGruposMensal'] = new Chart(document.getElementById('chartGruposMensal').getContext('2d'), {
-                type: 'bar', data: { labels: gpSorted.map(g=>g[0]), datasets: [{ label: 'Volume', data: gpSorted.map(g=>g[1]), backgroundColor: gpSorted.map(g => getColor('Grupo', g[0])), borderRadius:4 }] },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}} }
-            });
+            document.getElementById('kpiTotalMensal').innerText = dadosMes.length;
+            document.getElementById('kpiAtdMensalCard').innerText = (globalAtendimentos[mes] || 0).toLocaleString('pt-BR');
         }
 
-        function updateSemestralView() {
-            if(meses6Fechados.length === 0) return;
-
-            const dados6m = globalOuvidorias.filter(r => meses6Fechados.includes(getMonthYear(getRowDate(r))));
-            const total = dados6m.length;
-            
-            const volMes = {}; const atdMes = {}; const raMes = {}; const nivMes = { 'L1':{}, 'L2':{}, 'L3':{}, 'L4':{} };
-            const subcatsSem = {}; const planosSem = {}; const gruposSem = {}; const classifSem = {};
-            const catNivelSem = {}; 
-            let combinacoesPlanosSub = [];
-
-            meses6Fechados.forEach(m => {
-                volMes[m] = 0; raMes[m] = 0; atdMes[m] = globalAtendimentos[m] || 0;
-                ['L1','L2','L3','L4'].forEach(n => nivMes[n][m] = 0);
-            });
-
-            dados6m.forEach(r => {
-                const m = getMonthYear(getRowDate(r));
-                const nv = getField(r, ['Nivel', 'Nível']);
-                const cat = getField(r, ['Sub Categoria', 'Subcategoria']);
-                const pl = getField(r, ['Plano']);
-                const gp = getField(r, ['Grupo']);
-                const clf = getClassificacao(r);
-                const raVal = getField(r, ['Reclame Aqui', 'ReclameAqui', 'RA']);
-
-                volMes[m]++;
-                if(String(raVal).trim().toUpperCase() === 'TRUE') raMes[m]++;
-                if(!isIgnored(nv) && nivMes[nv] !== undefined) nivMes[nv][m]++;
-
-                if(!isIgnored(cat)) subcatsSem[cat] = (subcatsSem[cat] || 0) + 1;
-                if(!isIgnored(pl)) planosSem[pl] = (planosSem[pl] || 0) + 1;
-                if(!isIgnored(gp)) gruposSem[gp] = (gruposSem[gp] || 0) + 1;
-                if(!isIgnored(clf)) classifSem[clf] = (classifSem[clf] || 0) + 1;
-
-                if(!isIgnored(nv) && !isIgnored(cat)) {
-                    if(!catNivelSem[nv]) catNivelSem[nv] = {};
-                    catNivelSem[nv][cat] = (catNivelSem[nv][cat] || 0) + 1;
-                }
-
-                if(!isIgnored(pl) && !isIgnored(cat)) {
-                    let comboStr = `${pl} - ${cat}`;
-                    let existente = combinacoesPlanosSub.find(x => x.combo === comboStr);
-                    if(existente) existente.val++;
-                    else combinacoesPlanosSub.push({combo: comboStr, pl: pl, cat: cat, val: 1});
-                }
-            });
-
-            let totalAtd = 0; meses6Fechados.forEach(m => totalAtd += atdMes[m]);
-            const avgTaxa = totalAtd > 0 ? ((total / totalAtd) * 100).toFixed(2).replace('.', ',') : '-';
-
-            document.getElementById('kpiAtdSemestral').innerText = totalAtd > 0 ? totalAtd.toLocaleString('pt-BR') : '-';
-            document.getElementById('kpiTotalSemestral').innerText = total;
-            document.getElementById('kpiTaxaSemestral').innerText = avgTaxa !== '-' ? avgTaxa + '%' : '-';
-
-            const labelsMesesMascara = meses6Fechados.map(m => nomeMes(m));
-
-            const txOuv = meses6Fechados.map(m => atdMes[m] > 0 ? ((volMes[m]/atdMes[m])*100).toFixed(2) : 0);
-            destroyChart('chartEvolucaoTaxa');
-            chartInstances['chartEvolucaoTaxa'] = new Chart(document.getElementById('chartEvolucaoTaxa').getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: labelsMesesMascara,
-                    datasets: [
-                        { label: 'Taxa de Ouvidoria (%)', data: txOuv, type: 'line', borderColor: '#80EF63', backgroundColor: '#80EF63', borderWidth: 3, tension: 0.3, yAxisID: 'y', order: 1 },
-                        { label: 'Ouvidorias Absolutas', data: meses6Fechados.map(m=>volMes[m]), type: 'bar', backgroundColor: '#0e524b', borderRadius: 4, yAxisID: 'y1', order: 2 },
-                        { label: 'Total Atendimentos', data: meses6Fechados.map(m=>atdMes[m]), type: 'bar', backgroundColor: '#1e3a37', borderRadius: 4, yAxisID: 'y2', order: 3 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { mode: 'index', intersect: false } }, scales: { y: { type: 'linear', display: true, position: 'left', title: {display:true, text:'Taxa %'} }, y1: { type: 'linear', display: true, position: 'right', grid: {drawOnChartArea:false}, title: {display:true, text:'Ouvidorias'} }, y2: { type: 'linear', display: false, position: 'right', grid: {drawOnChartArea:false} } } }
-            });
-
-            destroyChart('chartEvolucaoNiveis');
-            chartInstances['chartEvolucaoNiveis'] = new Chart(document.getElementById('chartEvolucaoNiveis').getContext('2d'), {
-                type: 'bar',
-                data: { labels: labelsMesesMascara, datasets: ['L1','L2','L3','L4'].map((n) => ({ label: n, data: meses6Fechados.map(m => nivMes[n][m]), backgroundColor: getColor('Nível', n), borderRadius: 3 })) },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    scales: { x: { stacked: false }, y: { stacked: false } },
-                    plugins: { legend: { position: 'bottom', labels: {boxWidth: 10, font: {size: 11}} } } 
-                }
-            });
-
-            const allClassifs = Object.keys(classifSem);
-            const datasetsClassif = allClassifs.map((clf) => ({
-                label: clf,
-                data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(getRowDate(r)) === m && getClassificacao(r) === clf).length),
-                backgroundColor: getColor('Classificação', clf),
-                borderRadius: 3
-            }));
-            destroyChart('chartClassificacaoSemestral');
-            chartInstances['chartClassificacaoSemestral'] = new Chart(document.getElementById('chartClassificacaoSemestral').getContext('2d'), {
-                type: 'bar',
-                data: { labels: labelsMesesMascara, datasets: datasetsClassif },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {boxWidth: 10, font: {size: 11}} } } }
-            });
-
-            destroyChart('chartEvolucaoRA');
-            chartInstances['chartEvolucaoRA'] = new Chart(document.getElementById('chartEvolucaoRA').getContext('2d'), {
-                type: 'line',
-                data: { labels: labelsMesesMascara, datasets: [{ label: 'Casos Reclame Aqui', data: meses6Fechados.map(m => raMes[m]), borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.15)', fill:true, tension:0.3 }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            const top5SubNomes = Object.entries(subcatsSem).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x => x[0]);
-            const datasetsSubcats = top5SubNomes.map((sub) => {
-                return { label: sub, data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(getRowDate(r)) === m && getField(r, ['Sub Categoria', 'Subcategoria']) === sub).length), backgroundColor: getColor('Sub Categoria', sub), borderRadius: 3 };
-            });
-            destroyChart('chartTopSubcatsSemestral');
-            chartInstances['chartTopSubcatsSemestral'] = new Chart(document.getElementById('chartTopSubcatsSemestral').getContext('2d'), {
-                type: 'bar', data: { labels: labelsMesesMascara, datasets: datasetsSubcats },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {boxWidth: 10, font: {size: 11}} } } }
-            });
-
-            const top5PlanosNomes = Object.entries(planosSem).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x => x[0]);
-            const datasetsPlanos = top5PlanosNomes.map((plano) => {
-                return { label: plano, data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(getRowDate(r)) === m && getField(r, ['Plano']) === plano).length), backgroundColor: getColor('Plano', plano), borderRadius: 3 };
-            });
-            destroyChart('chartPlanosSemestral');
-            chartInstances['chartPlanosSemestral'] = new Chart(document.getElementById('chartPlanosSemestral').getContext('2d'), {
-                type: 'bar', data: { labels: labelsMesesMascara, datasets: datasetsPlanos },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {boxWidth: 10, font: {size: 11}} } } }
-            });
-
-            const niveisValidos = Object.keys(catNivelSem).filter(n=>n!=='Sem Nível' && !isIgnored(n)).sort();
-            const datasetsCatNivelSem = niveisValidos.map((nivel) => {
-                const cats = catNivelSem[nivel];
-                const topSub = Object.keys(cats).reduce((a,b) => cats[a]>cats[b]?a:b);
-                return { label: `[${nivel}] ${topSub}`, data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(getRowDate(r)) === m && getField(r, ['Nivel', 'Nível']) === nivel && getField(r, ['Sub Categoria', 'Subcategoria']) === topSub).length), backgroundColor: getColor('Nível', nivel), borderRadius: 3 };
-            });
-            destroyChart('chartCategoriaNivelSemestral');
-            chartInstances['chartCategoriaNivelSemestral'] = new Chart(document.getElementById('chartCategoriaNivelSemestral').getContext('2d'), {
-                type: 'bar', data: { labels: labelsMesesMascara, datasets: datasetsCatNivelSem },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {boxWidth: 10, font: {size: 11}} } } }
-            });
-
-            combinacoesPlanosSub.sort((a,b) => b.val - a.val);
-            const top5Combos = combinacoesPlanosSub.slice(0, 5);
-            const datasetsPlanoSubSem = top5Combos.map((item, index) => {
-                return { 
-                    label: item.combo, 
-                    data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(getRowDate(r)) === m && getField(r, ['Plano']) === item.pl && getField(r, ['Sub Categoria', 'Subcategoria']) === item.cat).length), 
-                    backgroundColor: colorPalette[index % colorPalette.length], 
-                    borderRadius: 3 
-                };
-            });
-            destroyChart('chartPlanoSubcatSemestral');
-            chartInstances['chartPlanoSubcatSemestral'] = new Chart(document.getElementById('chartPlanoSubcatSemestral').getContext('2d'), {
-                type: 'bar', data: { labels: labelsMesesMascara, datasets: datasetsPlanoSubSem },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {boxWidth: 10, font: {size: 11}} } } }
-            });
-
-            const top5GruposNomes = Object.entries(gruposSem).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x => x[0]);
-            const datasetsGrupos = top5GruposNomes.map((grupo) => {
-                return { label: grupo, data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(getRowDate(r)) === m && getField(r, ['Grupo']) === grupo).length), backgroundColor: getColor('Grupo', grupo), borderRadius: 3 };
-            });
-            destroyChart('chartGruposSemestral');
-            chartInstances['chartGruposSemestral'] = new Chart(document.getElementById('chartGruposSemestral').getContext('2d'), {
-                type: 'bar', data: { labels: labelsMesesMascara, datasets: datasetsGrupos },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {boxWidth: 10, font: {size: 11}} } } }
-            });
-        }
-
-        // CARREGAMENTO DIRETO VIA RAW GITHUB USERCONTENT (GARANTE SUPORTE ABSOLUTO)
         window.onload = () => {
-            const statusText = document.getElementById('statusSyncText');
-            const errorBanner = document.getElementById('errorBanner');
-            const errorMessage = document.getElementById('errorMessage');
+            const ouvData = Papa.parse(document.getElementById('rawOuvidorias').innerText.trim(), { header: true, skipEmptyLines: true }).data;
+            const atdData = Papa.parse(document.getElementById('rawAtendimentos').innerText.trim(), { header: true, skipEmptyLines: true }).data;
 
-            // URLs diretas com fallback automatico
-            const urlsOuvidorias = [
-                "https://raw.githubusercontent.com/thaisesganzerla/dashboard-ouvidoria/main/ouvidorias.csv.csv",
-                "https://raw.githubusercontent.com/thaisesganzerla/dashboard-ouvidoria/main/ouvidorias.csv"
-            ];
-            const urlsAtendimentos = [
-                "https://raw.githubusercontent.com/thaisesganzerla/dashboard-ouvidoria/main/atendimentos.csv.csv",
-                "https://raw.githubusercontent.com/thaisesganzerla/dashboard-ouvidoria/main/atendimentos.csv"
-            ];
-
-            const fetchCSV = (urls) => {
-                return new Promise((resolve) => {
-                    const tryNext = (index) => {
-                        if (index >= urls.length) resolve([]);
-                        Papa.parse(urls[index], {
-                            download: true,
-                            header: true,
-                            skipEmptyLines: 'greedy',
-                            complete: (res) => {
-                                if (res.data && res.data.length > 0) resolve(res.data);
-                                else tryNext(index + 1);
-                            },
-                            error: () => tryNext(index + 1)
-                        });
-                    };
-                    tryNext(0);
-                });
-            };
-
-            Promise.all([
-                fetchCSV(urlsOuvidorias),
-                fetchCSV(urlsAtendimentos)
-            ]).then(([dadosOuv, dadosAtd]) => {
-
-                globalOuvidorias = dadosOuv.filter(r => getRowDate(r));
-
-                if (globalOuvidorias.length === 0 && dadosOuv.length > 0) {
-                    const colunasIdentificadas = Object.keys(dadosOuv[0]).join(' | ');
-                    throw new Error(`As colunas foram lidas, mas não encontramos a data. <br><b>Colunas identificadas:</b> <br><code class="text-xs text-amber-300">${colunasIdentificadas}</code>`);
-                }
-
-                globalAtendimentos = {};
-                dadosAtd.forEach(row => {
-                    const dateVal = getField(row, ['Data', 'data']) || Object.values(row)[0];
-                    const ma = getMonthYear(dateVal);
-                    
-                    if (ma) {
-                        let numVal = 0;
-                        const atdField = getField(row, ['total atendimentos diarios', 'total atendimentos', 'atendimentos']);
-                        if (atdField) {
-                            let raw = String(atdField).replace(/\./g, '').replace(',', '.').trim();
-                            let parsed = parseFloat(raw);
-                            if (!isNaN(parsed)) numVal = parsed;
-                        } else {
-                            for (let key in row) {
-                                if (key.toLowerCase().includes('total') || key.toLowerCase().includes('atendimento')) {
-                                    let raw = String(row[key] || '').replace(/\./g, '').replace(',', '.').trim();
-                                    let parsed = parseFloat(raw);
-                                    if (!isNaN(parsed)) numVal = parsed;
-                                }
-                            }
-                        }
-                        globalAtendimentos[ma] = (globalAtendimentos[ma] || 0) + numVal;
-                    }
-                });
-
-                if (statusText) statusText.innerText = 'Dados sincronizados';
-                processData();
-            }).catch(err => {
-                console.error("Erro ao carregar dados:", err);
-                if (statusText) statusText.innerText = 'Erro de leitura';
-                if (errorBanner) {
-                    errorBanner.classList.remove('hidden');
-                    errorMessage.innerHTML = err.message || 'Ocorreu um erro ao ler os arquivos CSV.';
-                }
+            globalOuvidorias = ouvData;
+            atdData.forEach(row => {
+                const ma = getMonthYear(getField(row, ['Data']));
+                if (ma) globalAtendimentos[ma] = (globalAtendimentos[ma] || 0) + parseFloat(getField(row, ['total atendimentos diários']) || 0);
             });
+
+            document.getElementById('statusSyncText').innerText = 'Dados sincronizados';
+            processData();
         };
     </script>
 </body>
