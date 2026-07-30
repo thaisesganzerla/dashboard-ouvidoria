@@ -238,9 +238,6 @@
     </div>
 
     <script>
-        const urlOuvidorias = "./ouvidorias.csv";
-        const urlAtendimentos = "./atendimentos.csv";
-
         Chart.register(ChartDataLabels);
         Chart.defaults.layout.padding = { top: 35, right: 40, bottom: 15, left: 15 };
         Chart.defaults.color = '#94a3b8';
@@ -256,10 +253,8 @@
                 const dataset = context.dataset;
                 const isLine = dataset.type === 'line' || type === 'line';
                 const isStacked = context.chart.config.options.scales?.x?.stacked;
-                
                 if (isLine) return dataset.borderColor;
                 if (dataset.label === 'Total Atendimentos') return '#94a3b8';
-                
                 return (type === 'doughnut' || isStacked) ? '#ffffff' : '#e2e8f0';
             },
             backgroundColor: function(context) {
@@ -279,7 +274,6 @@
                 const isLine = dataset.type === 'line' || type === 'line';
                 const isStacked = context.chart.config.options.scales?.x?.stacked;
                 const isHorizontal = context.chart.config.options.indexAxis === 'y';
-                
                 if (dataset.label === 'Total Atendimentos') return 'bottom'; 
                 if (isLine) return 'top'; 
                 if (type === 'doughnut' || isStacked) return 'center';
@@ -329,7 +323,6 @@
         function getColor(category, key) {
             if (!key) return '#475569';
             if (fixedColors[category] && fixedColors[category][key]) return fixedColors[category][key];
-            
             if (!colorMaps[category]) colorMaps[category] = {};
             if (!colorMaps[category][key]) {
                 colorMaps[category][key] = colorPalette[paletteIndex % colorPalette.length];
@@ -344,7 +337,6 @@
             return v === 'não informado' || v === 'não informada' || v === 'sem grupo' || v === 'sem nível' || v === '';
         }
 
-        // Limpa strings removendo caracteres ocultos do Excel
         function cleanString(str) {
             if (!str) return '';
             return String(str)
@@ -358,8 +350,7 @@
 
         function getField(row, targetNames) {
             if (!row) return '';
-            const rowKeys = Object.keys(row);
-            for (let key of rowKeys) {
+            for (let key of Object.keys(row)) {
                 const normKey = cleanString(key);
                 for (let target of targetNames) {
                     const normTarget = cleanString(target);
@@ -376,14 +367,13 @@
         }
 
         function getClassificacao(row) {
-            return getField(row, ['Classificacao', 'Classificacao']);
+            return getField(row, ['Classificacao', 'Classificação']);
         }
 
         function baixarDashboard() {
             const btn = document.getElementById('btnDownload');
             const originalText = btn.innerHTML;
             btn.innerHTML = '⏳ Gerando...';
-            
             const hideElements = document.querySelectorAll('.no-export');
             hideElements.forEach(el => el.style.display = 'none');
 
@@ -396,7 +386,6 @@
                     link.download = 'Dashboard_Ouvidoria_Bling.png';
                     link.href = canvas.toDataURL('image/png');
                     link.click();
-                    
                     hideElements.forEach(el => el.style.display = '');
                     btn.innerHTML = originalText;
                 }).catch(() => {
@@ -423,15 +412,12 @@
             if(tab === 'semestral') updateSemestralView();
         }
 
-        // Extrator de Mês/Ano flexível para 14/09/2022 ou 14-09-2022
         function getMonthYear(dateStr) {
             if (!dateStr) return null;
             const clean = String(dateStr).trim().replace(/-/g, '/');
             const parts = clean.split('/');
             if (parts.length === 3) {
-                // Se a data for YYYY/MM/DD
                 if (parts[0].length === 4) return `${parts[1].padStart(2, '0')}/${parts[0]}`;
-                // Se a data for DD/MM/YYYY
                 return `${parts[1].padStart(2, '0')}/${parts[2]}`;
             }
             if (parts.length === 2) return `${parts[0].padStart(2, '0')}/${parts[1]}`;
@@ -486,7 +472,6 @@
             if(chartInstances[id]) chartInstances[id].destroy();
         }
 
-        // --- MENSAL ---
         function updateMensalView() {
             const mes = document.getElementById('monthSelector').value;
             if(!mes) return;
@@ -509,7 +494,7 @@
                 
                 const dStr = getRowDate(row);
                 const dA = parseDateBR(dStr);
-                const dC = parseDateBR(getField(row, ['Data de conclusao', 'Data Conclusao']));
+                const dC = parseDateBR(getField(row, ['Data de conclusao', 'Data de conclusão', 'Data Conclusao']));
                 
                 if (dA && dC && dC >= dA) { totalDias += Math.ceil(Math.abs(dC - dA) / (1000 * 60 * 60 * 24)); totalConcluidos++; }
                 
@@ -522,7 +507,7 @@
                     }
                 }
 
-                const nv = getField(row, ['Nivel', 'Nivel']);
+                const nv = getField(row, ['Nivel', 'Nível']);
                 const gp = getField(row, ['Grupo']);
                 const cat = getField(row, ['Sub Categoria', 'Subcategoria']);
                 const pl = getField(row, ['Plano']);
@@ -634,7 +619,6 @@
             });
         }
 
-        // --- SEMESTRAL ---
         function updateSemestralView() {
             if(meses6Fechados.length === 0) return;
 
@@ -653,7 +637,7 @@
 
             dados6m.forEach(r => {
                 const m = getMonthYear(getRowDate(r));
-                const nv = getField(r, ['Nivel', 'Nivel']);
+                const nv = getField(r, ['Nivel', 'Nível']);
                 const cat = getField(r, ['Sub Categoria', 'Subcategoria']);
                 const pl = getField(r, ['Plano']);
                 const gp = getField(r, ['Grupo']);
@@ -763,7 +747,7 @@
             const datasetsCatNivelSem = niveisValidos.map((nivel) => {
                 const cats = catNivelSem[nivel];
                 const topSub = Object.keys(cats).reduce((a,b) => cats[a]>cats[b]?a:b);
-                return { label: `[${nivel}] ${topSub}`, data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(getRowDate(r)) === m && getField(r, ['Nivel', 'Nivel']) === nivel && getField(r, ['Sub Categoria', 'Subcategoria']) === topSub).length), backgroundColor: getColor('Nível', nivel), borderRadius: 3 };
+                return { label: `[${nivel}] ${topSub}`, data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(getRowDate(r)) === m && getField(r, ['Nivel', 'Nível']) === nivel && getField(r, ['Sub Categoria', 'Subcategoria']) === topSub).length), backgroundColor: getColor('Nível', nivel), borderRadius: 3 };
             });
             destroyChart('chartCategoriaNivelSemestral');
             chartInstances['chartCategoriaNivelSemestral'] = new Chart(document.getElementById('chartCategoriaNivelSemestral').getContext('2d'), {
@@ -798,37 +782,37 @@
             });
         }
 
-        // CARREGAMENTO AUTOMÁTICO DOS DADOS
+        // CARREGAMENTO AUTOMÁTICO COM SUPORTE A DUPLA EXTENSÃO E LINHAS EM BRANCO
         window.onload = () => {
             const statusText = document.getElementById('statusSyncText');
             const errorBanner = document.getElementById('errorBanner');
             const errorMessage = document.getElementById('errorMessage');
 
-            Promise.all([
-                new Promise((resolve, reject) => {
-                    Papa.parse(urlOuvidorias, {
-                        download: true,
-                        header: true,
-                        delimiter: "", // Autodetecta delimitador (, ou ;)
-                        skipEmptyLines: true,
-                        complete: resolve,
-                        error: (err) => reject({ file: 'ouvidorias.csv', err })
-                    });
-                }),
-                new Promise((resolve, reject) => {
-                    Papa.parse(urlAtendimentos, {
-                        download: true,
-                        header: true,
-                        delimiter: "", // Autodetecta delimitador (, ou ;)
-                        skipEmptyLines: true,
-                        complete: resolve,
-                        error: (err) => reject({ file: 'atendimentos.csv', err })
-                    });
-                })
-            ]).then(resultados => {
-                const dadosOuv = resultados[0].data || [];
-                const dadosAtd = resultados[1].data || [];
+            const fetchCSV = (urls) => {
+                return new Promise((resolve) => {
+                    const tryNext = (index) => {
+                        if (index >= urls.length) resolve([]);
+                        Papa.parse(urls[index], {
+                            download: true,
+                            header: true,
+                            skipEmptyLines: 'greedy',
+                            complete: (res) => {
+                                if (res.data && res.data.length > 0) resolve(res.data);
+                                else tryNext(index + 1);
+                            },
+                            error: () => tryNext(index + 1)
+                        });
+                    };
+                    tryNext(0);
+                });
+            };
 
+            Promise.all([
+                fetchCSV(["./ouvidorias.csv", "./ouvidorias.csv.csv"]),
+                fetchCSV(["./atendimentos.csv", "./atendimentos.csv.csv"])
+            ]).then(([dadosOuv, dadosAtd]) => {
+
+                // Filtra linhas vazias do cabeçalho
                 globalOuvidorias = dadosOuv.filter(r => getRowDate(r));
 
                 if (globalOuvidorias.length === 0 && dadosOuv.length > 0) {
@@ -861,10 +845,7 @@
                     }
                 });
 
-                if (statusText) {
-                    statusText.innerText = 'Dados sincronizados';
-                }
-
+                if (statusText) statusText.innerText = 'Dados sincronizados';
                 processData();
             }).catch(err => {
                 console.error("Erro ao carregar dados:", err);
