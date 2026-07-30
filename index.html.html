@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Ouvidoria</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Configuração da cor personalizada do Bling -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bling: {
+                            50: '#e6f9f3',
+                            100: '#ccece2',
+                            500: '#00C48C',
+                            600: '#00a375',
+                            800: '#006146',
+                            900: '#00412f',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .chart-container { position: relative; height: 500px; width: 100%; } /* Altura super expandida (de 380 para 500px) */
+        .chart-container-large { position: relative; height: 600px; width: 100%; } /* Altura super expandida (de 480 para 600px) */
+        .tab-active { border-bottom: 2px solid #00C48C; color: #00a375; font-weight: 600; }
+        .tab-inactive { color: #64748b; font-weight: 500; }
+        .tab-inactive:hover { color: #00a375; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="min-h-screen p-4 md:p-8 max-w-7xl mx-auto">
+        
+        <!-- Cabeçalho e Uploads -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">📊 Dashboard de Ouvidoria</h1>
+                <p class="text-sm text-slate-500 mt-1">Análise Estratégica, Operacional e Produto</p>
+            </div>
+            
+            <div class="flex flex-col md:flex-row gap-4 items-end">
+                
+                <!-- Botão de Download -->
+                <div class="flex flex-col items-end w-full md:w-auto no-export mr-4 border-r pr-6 border-slate-200">
+                    <button id="btnDownload" onclick="baixarDashboard()" class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 px-4 rounded-lg shadow-sm border border-slate-300 transition-colors text-sm font-medium whitespace-nowrap flex items-center gap-2">
+                        📸 Baixar Imagem
+                    </button>
+                </div>
+
+                <!-- Upload Ouvidorias -->
+                <div class="flex flex-col items-end w-full md:w-auto no-export">
+                    <label for="csvOuvidorias" class="cursor-pointer bg-bling-500 hover:bg-bling-600 text-white py-2 px-4 rounded-lg shadow transition-colors text-sm font-medium whitespace-nowrap">
+                        1. 📁 Upload Ouvidorias (CSV)
+                    </label>
+                    <input type="file" id="csvOuvidorias" accept=".csv" class="hidden">
+                    <p class="text-[10px] text-slate-400 mt-1 text-right max-w-[200px]" id="statusOuvidorias">Dados de exemplo carregados.</p>
+                </div>
+
+                <!-- Colar Atendimentos -->
+                <div class="flex flex-col items-end w-full md:w-auto no-export">
+                    <button onclick="abrirModalAtendimentos()" class="cursor-pointer bg-slate-700 hover:bg-slate-800 text-white py-2 px-4 rounded-lg shadow transition-colors text-sm font-medium whitespace-nowrap flex items-center gap-2">
+                        <span>2. 📞 Colar Atendimentos (Excel)</span>
+                    </button>
+                    
+                    <div class="text-right mt-1 flex flex-col items-end">
+                        <p class="text-[10px] text-slate-400 max-w-xs leading-tight" id="statusAtendimentos">Base manual pré-carregada.</p>
+                        <button id="btnVerLog" class="hidden text-[10px] text-bling-600 hover:text-bling-800 underline mt-1 font-semibold" onclick="document.getElementById('modalLog').classList.remove('hidden')">Ver somatório diário</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navegação por Abas -->
+        <div class="border-b border-slate-200 mb-6 flex gap-6 overflow-x-auto">
+            <button onclick="switchTab('mensal')" id="tabMensal" class="pb-3 px-2 tab-active transition-all whitespace-nowrap">Visão Mensal</button>
+            <button onclick="switchTab('semestral')" id="tabSemestral" class="pb-3 px-2 tab-inactive transition-all whitespace-nowrap">Visão 6 Meses (Evolução Mês a Mês)</button>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- ABA: VISÃO MENSAL                              -->
+        <!-- ============================================== -->
+        <div id="viewMensal" class="block">
+            
+            <div class="flex items-center gap-3 mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-200 w-fit">
+                <label class="text-sm font-semibold text-slate-700">Selecione o Mês:</label>
+                <select id="monthSelector" class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-bling-500 focus:border-bling-500 block p-2 outline-none" onchange="updateMensalView()">
+                    <option value="">A carregar...</option>
+                </select>
+            </div>
+
+            <section class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-slate-400">
+                    <p class="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wide">1. Total Atendimentos</p>
+                    <h3 class="text-2xl font-bold text-slate-800" id="kpiAtdMensalCard">-</h3>
+                    <p class="text-[10px] text-slate-400 mt-1">Soma diária colada</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-bling-500">
+                    <p class="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wide">2. Total Ouvidorias</p>
+                    <h3 class="text-2xl font-bold text-slate-800" id="kpiTotalMensal">-</h3>
+                    <p class="text-[10px] text-slate-400 mt-1">Registos no mês</p>
+                </div>
+                
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-emerald-500 bg-bling-50">
+                    <p class="text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wide">3. Taxa de Ouvidoria</p>
+                    <h3 class="text-2xl font-bold text-slate-800 text-emerald-700"><span id="kpiTaxaMensal">-</span></h3>
+                    <p class="text-[10px] text-emerald-600 mt-1">(Ouvidorias ÷ Atendimentos) * 100</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-amber-500">
+                    <p class="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wide">TMR Médio</p>
+                    <h3 class="text-2xl font-bold text-slate-800" id="kpiTMRMensal">-</h3>
+                    <p class="text-[10px] text-slate-400 mt-1">Dias p/ resolução</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-red-500">
+                    <p class="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Reclame Aqui</p>
+                    <h3 class="text-2xl font-bold text-slate-800"><span id="kpiRAMensal">-</span><span class="text-sm font-medium text-slate-500">%</span></h3>
+                    <p class="text-[10px] text-slate-400 mt-1">Da base de ouvidorias</p>
+                </div>
+            </section>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4">Volume por Nível</h3>
+                    <div class="chart-container"><canvas id="chartNiveisMensal"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4">Top 5 Subcategorias</h3>
+                    <div class="chart-container"><canvas id="chartTopSubcatsMensal"></canvas></div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4">Top Subcategoria Acionada por Nível</h3>
+                    <div class="chart-container"><canvas id="chartCategoriaNivelMensal"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4">Planos mais Acionados</h3>
+                    <div class="chart-container"><canvas id="chartPlanosMensal"></canvas></div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-1">Top Planos x Subcategorias</h3>
+                    <p class="text-xs text-slate-500 mb-4">Volume das 5 principais subcategorias nos 5 principais planos.</p>
+                    <div class="chart-container"><canvas id="chartPlanoSubcatMensal"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4">Top Ofensores por Grupo</h3>
+                    <div class="chart-container"><canvas id="chartGruposMensal"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- ABA: VISÃO SEMESTRAL (6 MESES)                 -->
+        <!-- ============================================== -->
+        <div id="viewSemestral" class="hidden">
+            
+            <div class="mb-6 bg-bling-50 p-4 rounded-xl border border-bling-100 flex items-start gap-3">
+                <span class="text-xl">ℹ️</span>
+                <div>
+                    <p class="text-sm text-bling-800 font-medium">Análise de Evolução Mês a Mês</p>
+                    <p class="text-xs text-bling-900 mt-1 opacity-80">Todos os gráficos abaixo exibem o seu respetivo volume separado e detalhado mês a mês.</p>
+                </div>
+            </div>
+
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-slate-400">
+                    <p class="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Total Atendimentos (Semestre)</p>
+                    <h3 class="text-2xl font-bold text-slate-800" id="kpiAtdSemestral">-</h3>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 border-l-4 border-bling-500">
+                    <p class="text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Total Ouvidorias (Semestre)</p>
+                    <h3 class="text-2xl font-bold text-slate-800" id="kpiTotalSemestral">-</h3>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 bg-bling-50 border-l-4 border-emerald-500">
+                    <p class="text-[10px] font-bold text-slate-600 mb-1 uppercase tracking-wide">Taxa Média no Semestre</p>
+                    <h3 class="text-2xl font-bold text-emerald-700"><span id="kpiTaxaSemestral">-</span></h3>
+                    <p class="text-[10px] text-emerald-600 mt-1">(Total Ouvidorias ÷ Total Atendimentos) * 100</p>
+                </div>
+            </section>
+
+            <div class="grid grid-cols-1 gap-6 mb-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4">Evolução: Taxa de Ouvidoria x Volume Absoluto (Mês a Mês)</h3>
+                    <div class="chart-container-large"><canvas id="chartEvolucaoTaxa"></canvas></div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4">Evolução de Níveis (Mês a Mês)</h3>
+                    <div class="chart-container"><canvas id="chartEvolucaoNiveis"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4">Casos Reclame Aqui (Mês a Mês)</h3>
+                    <div class="chart-container"><canvas id="chartEvolucaoRA"></canvas></div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4">Top 5 Subcategorias (Separadas Mês a Mês)</h3>
+                    <div class="chart-container"><canvas id="chartTopSubcatsSemestral"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4">Planos mais Acionados (Separados Mês a Mês)</h3>
+                    <div class="chart-container"><canvas id="chartPlanosSemestral"></canvas></div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4">Top Subcategoria Acionada por Nível (Mês a Mês)</h3>
+                    <div class="chart-container"><canvas id="chartCategoriaNivelSemestral"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-1">Evolução: Top Planos x Subcategorias (Mês a Mês)</h3>
+                    <p class="text-xs text-slate-500 mb-4">Tendência das 5 principais combinações do semestre.</p>
+                    <div class="chart-container"><canvas id="chartPlanoSubcatSemestral"></canvas></div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 lg:col-span-2">
+                    <h3 class="text-sm font-bold text-slate-800 mb-4">Evolução dos Top 5 Grupos (Mês a Mês)</h3>
+                    <div class="chart-container"><canvas id="chartGruposSemestral"></canvas></div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODAL DE COLAR ATENDIMENTOS A PROVA DE BALAS   -->
+    <!-- ============================================== -->
+    <div id="modalAtendimentos" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800">Colar Tabela de Atendimentos</h3>
+                <button onclick="fecharModalAtendimentos()" class="text-slate-400 hover:text-red-500 font-bold text-xl px-2">&times;</button>
+            </div>
+            
+            <div class="p-5 flex-1 overflow-y-auto">
+                <p class="text-sm text-slate-600 mb-3">
+                    Abra o seu Excel, copie as colunas com os dias e o total de tickets e cole na caixa abaixo.<br>
+                    <span class="text-xs italic text-slate-400">O sistema irá ignorar palavras como "Total" e encontrará apenas os números corretos.</span>
+                </p>
+                <textarea id="pasteArea" rows="8" class="w-full border border-slate-300 rounded-lg p-3 text-sm font-mono text-slate-700 focus:ring-bling-500 focus:border-bling-500 outline-none resize-none" placeholder="Exemplo de como colar:\n01/06/2026	150\n02/06/2026	20.142\n03/06/2026	800"></textarea>
+                
+                <div class="mt-4 flex justify-end">
+                    <button onclick="processarTextoPasted()" class="bg-bling-500 hover:bg-bling-600 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                        Calcular Totais
+                    </button>
+                </div>
+
+                <!-- Preview Box após o processamento -->
+                <div id="previewAtendimentos" class="mt-4 hidden p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RAIO-X -->
+    <div id="modalLog" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800">Raio-X: Leitura de Atendimentos</h3>
+                <button onclick="document.getElementById('modalLog').classList.add('hidden')" class="text-slate-400 hover:text-red-500 font-bold text-xl px-2">&times;</button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 font-mono text-xs text-slate-600" id="logContent">
+                Nenhum ficheiro lido ainda.
+            </div>
+            <div class="p-3 border-t bg-slate-50 text-[10px] text-slate-400 text-center">
+                O sistema lê a data (ex: 01/06/2026) e recolhe o último número da linha.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Registar o plugin de DataLabels para colocar os números fixos nos gráficos
+        Chart.register(ChartDataLabels);
+        
+        // Espaço extra nas margens bastante ampliado para os números não serem cortados nas bordas do gráfico
+        Chart.defaults.layout.padding = { top: 35, right: 40, bottom: 15, left: 15 };
+        
+        Chart.defaults.set('plugins.datalabels', {
+            display: function(context) {
+                const val = context.dataset.data[context.dataIndex];
+                // Mostra TODOS os números maiores que zero. Removida a regra que ocultava fatias finas!
+                return val > 0; 
+            },
+            color: function(context) {
+                const type = context.chart.config.type;
+                const dataset = context.dataset;
+                const isLine = dataset.type === 'line' || type === 'line';
+                const isStacked = context.chart.config.options.scales?.x?.stacked;
+                
+                if (isLine) return dataset.borderColor;
+                if (dataset.label === 'Total Atendimentos') return '#94a3b8';
+                
+                return (type === 'doughnut' || isStacked) ? '#ffffff' : '#475569';
+            },
+            backgroundColor: function(context) {
+                const isLine = context.dataset.type === 'line' || context.chart.config.type === 'line';
+                return isLine ? 'rgba(255, 255, 255, 0.85)' : null;
+            },
+            borderRadius: 4,
+            anchor: function(context) {
+                const type = context.chart.config.type;
+                const isStacked = context.chart.config.options.scales?.x?.stacked;
+                if (type === 'doughnut' || isStacked) return 'center';
+                return 'end'; 
+            },
+            align: function(context) {
+                const type = context.chart.config.type;
+                const dataset = context.dataset;
+                const isLine = dataset.type === 'line' || type === 'line';
+                const isStacked = context.chart.config.options.scales?.x?.stacked;
+                const isHorizontal = context.chart.config.options.indexAxis === 'y';
+                
+                if (dataset.label === 'Total Atendimentos') return 'bottom'; 
+                if (isLine) return 'top'; 
+                if (type === 'doughnut' || isStacked) return 'center';
+                if (isHorizontal) return 'right';
+                return 'top'; 
+            },
+            offset: 4, // Afasta um pouco o número da barra/linha para evitar que fique espremido
+            font: { weight: 'bold', size: 10 },
+            formatter: (value, context) => {
+                if (context.dataset.label && context.dataset.label.includes('Taxa')) {
+                    return value + '%';
+                }
+                return value.toLocaleString('pt-BR');
+            },
+            clip: false
+        });
+
+        let globalOuvidorias = [];
+        let globalAtendimentos = {}; 
+        let mesesDisponiveis = [];
+        let meses6Fechados = [];
+        let chartInstances = {};
+        
+        // NOVA PALETA DE CORES DINÂMICA (Ultra Contraste - Elimina cores parecidas)
+        const colorPalette = [
+            '#8b5cf6', // Violeta
+            '#14b8a6', // Teal (Verde água)
+            '#f43f5e', // Rose (Rosa avermelhado)
+            '#eab308', // Amarelo
+            '#3b82f6', // Azul
+            '#22c55e', // Verde
+            '#f97316', // Laranja
+            '#ec4899', // Rosa pink
+            '#06b6d4', // Ciano
+            '#6366f1', // Indigo
+            '#84cc16', // Verde Limão
+            '#ef4444', // Vermelho
+            '#0ea5e9'  // Azul Celeste
+        ];
+        
+        // Cores Fixas (Garante que L1, L2, L3, L4 e os Planos tenham sempre cores distintas e fixas em todo lado)
+        const fixedColors = {
+            'Nível': { 'L1': '#00C48C', 'L2': '#3b82f6', 'L3': '#f97316', 'L4': '#ef4444' },
+            'Plano': { 
+                'Cobalto': '#1E3A8A',        // Azul Escuro forte
+                'Titânio Tier 1': '#D97706', // Laranja forte
+                'Titânio Tier 2': '#DB2777', // Rosa forte
+                'Titânio Tier 3': '#7C3AED', // Roxo forte
+                'Diamante': '#0891B2',       // Ciano / Azul piscina
+                'Elite': '#475569',          // Cinza chumbo / Grafite
+                // Cores de fallback caso venham nomes antigos:
+                'Mercúrio': '#EAB308',       // Amarelo
+                'Titânio': '#EF4444'         // Vermelho
+            }
+        };
+        const colorMaps = { 'Plano': {}, 'Grupo': {}, 'Sub Categoria': {} };
+        let paletteIndex = 0;
+
+        function getColor(category, key) {
+            if (!key) return '#cbd5e1';
+            if (fixedColors[category] && fixedColors[category][key]) return fixedColors[category][key];
+            
+            if (!colorMaps[category]) colorMaps[category] = {};
+            if (!colorMaps[category][key]) {
+                colorMaps[category][key] = colorPalette[paletteIndex % colorPalette.length];
+                paletteIndex++;
+            }
+            return colorMaps[category][key];
+        }
+
+        function isIgnored(val) {
+            if (!val) return true;
+            const v = String(val).toLowerCase().trim();
+            return v === 'não informado' || v === 'não informada' || v === 'sem grupo' || v === 'sem nível' || v === '';
+        }
+
+        // Função para gerar Print/Download do Ecrã
+        function baixarDashboard() {
+            const btn = document.getElementById('btnDownload');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Gerando...';
+            
+            // Ocultar elementos de UI para uma imagem limpa
+            const hideElements = document.querySelectorAll('.no-export');
+            hideElements.forEach(el => el.style.display = 'none');
+
+            setTimeout(() => {
+                html2canvas(document.querySelector('.max-w-7xl'), {
+                    scale: 2,
+                    backgroundColor: '#f8fafc'
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = 'Dashboard_Ouvidoria.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    hideElements.forEach(el => el.style.display = '');
+                    btn.innerHTML = originalText;
+                }).catch(err => {
+                    hideElements.forEach(el => el.style.display = '');
+                    btn.innerHTML = originalText;
+                    alert('Erro ao gerar imagem.');
+                });
+            }, 100);
+        }
+
+        function nomeMes(m) {
+            if (!m) return '';
+            const partes = m.split('/');
+            const nomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            return `${nomes[parseInt(partes[0], 10) - 1]}/${partes[1]}`;
+        }
+
+        function switchTab(tab) {
+            document.getElementById('viewMensal').classList.toggle('hidden', tab !== 'mensal');
+            document.getElementById('viewSemestral').classList.toggle('hidden', tab !== 'semestral');
+            document.getElementById('tabMensal').className = tab === 'mensal' ? 'pb-3 px-2 tab-active transition-all whitespace-nowrap' : 'pb-3 px-2 tab-inactive transition-all whitespace-nowrap';
+            document.getElementById('tabSemestral').className = tab === 'semestral' ? 'pb-3 px-2 tab-active transition-all whitespace-nowrap' : 'pb-3 px-2 tab-inactive transition-all whitespace-nowrap';
+            if(tab === 'mensal') updateMensalView();
+            if(tab === 'semestral') updateSemestralView();
+        }
+
+        function getMonthYear(dateStr) {
+            if (!dateStr) return null;
+            const parts = dateStr.split('/');
+            if (parts.length === 3) return `${parts[1].padStart(2, '0')}/${parts[2]}`;
+            if (parts.length === 2) return `${parts[0].padStart(2, '0')}/${parts[1]}`;
+            return null;
+        }
+
+        function parseDateBR(dateStr) {
+            if (!dateStr) return null;
+            const parts = dateStr.split('/');
+            if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
+            return null;
+        }
+
+        function sortMesAno(mesAnoList) {
+            return mesAnoList.sort((a, b) => {
+                const [mA, yA] = a.split('/');
+                const [mB, yB] = b.split('/');
+                return new Date(yA, mA - 1) - new Date(yB, mB - 1);
+            });
+        }
+
+        function processData() {
+            const mesesSet = new Set();
+            globalOuvidorias.forEach(row => {
+                const ma = getMonthYear(row['Data de abertura'] || row['Data da ouvidoria']);
+                if(ma) mesesSet.add(ma);
+            });
+            mesesDisponiveis = sortMesAno(Array.from(mesesSet));
+
+            const select = document.getElementById('monthSelector');
+            select.innerHTML = '';
+            mesesDisponiveis.slice().reverse().forEach(ma => {
+                select.add(new Option(nomeMes(ma), ma));
+            });
+
+            const hoje = new Date();
+            const mesAtual = `${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
+            meses6Fechados = mesesDisponiveis.filter(m => m !== mesAtual).slice(-6);
+
+            if(mesesDisponiveis.length > 0) {
+                select.value = mesesDisponiveis[mesesDisponiveis.length - 1];
+                updateMensalView();
+            }
+        }
+
+        function destroyChart(id) {
+            if(chartInstances[id]) chartInstances[id].destroy();
+        }
+
+        // --- MENSAL ---
+        function updateMensalView() {
+            const mes = document.getElementById('monthSelector').value;
+            if(!mes) return;
+
+            const dadosMes = globalOuvidorias.filter(r => getMonthYear(r['Data de abertura'] || r['Data da ouvidoria']) === mes);
+            const atendimentosTotal = globalAtendimentos[mes] || 0;
+
+            const total = dadosMes.length;
+            let totalDias = 0; let totalConcluidos = 0; let reclameAqui = 0;
+            
+            const niveis = {}; const grupos = {}; const subcats = {}; 
+            const catNivel = {}; const planos = {}; const planoSubcat = {};
+
+            dadosMes.forEach(row => {
+                if(String(row['Reclame Aqui']).trim().toUpperCase() === 'TRUE') reclameAqui++;
+                const dA = parseDateBR(row['Data de abertura'] || row['Data da ouvidoria']);
+                const dC = parseDateBR(row['Data de conclusão']);
+                if (dA && dC && dC >= dA) { totalDias += Math.ceil(Math.abs(dC - dA) / (1000 * 60 * 60 * 24)); totalConcluidos++; }
+                
+                const nv = row['Nível']; const gp = row['Grupo'];
+                const cat = row['Sub Categoria']; const pl = row['Plano'];
+
+                if (!isIgnored(nv)) niveis[nv] = (niveis[nv] || 0) + 1; 
+                if (!isIgnored(gp)) grupos[gp] = (grupos[gp] || 0) + 1;
+                if (!isIgnored(cat)) subcats[cat] = (subcats[cat] || 0) + 1; 
+                if (!isIgnored(pl)) planos[pl] = (planos[pl] || 0) + 1;
+                
+                if (!isIgnored(nv) && !isIgnored(cat)) {
+                    if(!catNivel[nv]) catNivel[nv] = {}; 
+                    catNivel[nv][cat] = (catNivel[nv][cat] || 0) + 1;
+                }
+                if (!isIgnored(pl) && !isIgnored(cat)) {
+                    if(!planoSubcat[pl]) planoSubcat[pl] = {}; 
+                    planoSubcat[pl][cat] = (planoSubcat[pl][cat] || 0) + 1;
+                }
+            });
+
+            document.getElementById('kpiAtdMensalCard').innerText = atendimentosTotal > 0 ? atendimentosTotal.toLocaleString('pt-BR') : '-';
+            document.getElementById('kpiTotalMensal').innerText = total;
+            
+            if(atendimentosTotal > 0) {
+                const taxa = ((total / atendimentosTotal) * 100).toFixed(2).replace('.', ',');
+                document.getElementById('kpiTaxaMensal').innerText = taxa + '%';
+            } else { document.getElementById('kpiTaxaMensal').innerText = '-'; }
+
+            document.getElementById('kpiTMRMensal').innerText = totalConcluidos > 0 ? (totalDias/totalConcluidos).toFixed(1).replace('.', ',') : 0;
+            document.getElementById('kpiRAMensal').innerText = total > 0 ? ((reclameAqui/total)*100).toFixed(1).replace('.', ',') : 0;
+
+            destroyChart('chartNiveisMensal');
+            chartInstances['chartNiveisMensal'] = new Chart(document.getElementById('chartNiveisMensal').getContext('2d'), {
+                type: 'doughnut', data: { labels: Object.keys(niveis), datasets: [{ data: Object.values(niveis), backgroundColor: Object.keys(niveis).map(n => getColor('Nível', n)), borderWidth:0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+            });
+
+            const top5Subcats = Object.entries(subcats).sort((a,b)=>b[1]-a[1]).slice(0,5);
+            destroyChart('chartTopSubcatsMensal');
+            chartInstances['chartTopSubcatsMensal'] = new Chart(document.getElementById('chartTopSubcatsMensal').getContext('2d'), {
+                type: 'bar', data: { labels: top5Subcats.map(s=>s[0]), datasets: [{ label: 'Volume', data: top5Subcats.map(s=>s[1]), backgroundColor: top5Subcats.map(s => getColor('Sub Categoria', s[0])), borderRadius:4 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}} }
+            });
+
+            const topCatPorNivel = Object.keys(catNivel).sort().map(n => {
+                const cats = catNivel[n]; const top = Object.keys(cats).reduce((a,b) => cats[a]>cats[b]?a:b);
+                return { label: `[${n}] ${top}`, val: cats[top], nivel: n };
+            });
+            
+            const datasetsCatNivelMensal = topCatPorNivel.map((t) => ({
+                label: t.label, data: [t.val], backgroundColor: getColor('Nível', t.nivel), borderRadius: 4
+            }));
+            destroyChart('chartCategoriaNivelMensal');
+            chartInstances['chartCategoriaNivelMensal'] = new Chart(document.getElementById('chartCategoriaNivelMensal').getContext('2d'), {
+                type: 'bar', data: { labels: [''], datasets: datasetsCatNivelMensal },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { x: { display: false } } }
+            });
+
+            const planosSorted = Object.entries(planos).sort((a,b)=>b[1]-a[1]);
+            destroyChart('chartPlanosMensal');
+            chartInstances['chartPlanosMensal'] = new Chart(document.getElementById('chartPlanosMensal').getContext('2d'), {
+                type: 'doughnut', data: { labels: planosSorted.map(p=>p[0]), datasets: [{ data: planosSorted.map(p=>p[1]), backgroundColor: planosSorted.map(p => getColor('Plano', p[0])), borderWidth:0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+            });
+
+            const topPlanosNomes = planosSorted.slice(0,5).map(p=>p[0]);
+            const topSubcatsNomes = top5Subcats.map(s=>s[0]);
+            const datasetsPlanoSub = topSubcatsNomes.map((sub) => {
+                return { label: sub, data: topPlanosNomes.map(plano => (planoSubcat[plano] && planoSubcat[plano][sub]) || 0), backgroundColor: getColor('Sub Categoria', sub) }
+            });
+            destroyChart('chartPlanoSubcatMensal');
+            chartInstances['chartPlanoSubcatMensal'] = new Chart(document.getElementById('chartPlanoSubcatMensal').getContext('2d'), {
+                type: 'bar', data: { labels: topPlanosNomes, datasets: datasetsPlanoSub },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } }, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
+            });
+
+            const gpSorted = Object.entries(grupos).sort((a,b)=>b[1]-a[1]).slice(0,10);
+            destroyChart('chartGruposMensal');
+            chartInstances['chartGruposMensal'] = new Chart(document.getElementById('chartGruposMensal').getContext('2d'), {
+                type: 'bar', data: { labels: gpSorted.map(g=>g[0]), datasets: [{ label: 'Volume', data: gpSorted.map(g=>g[1]), backgroundColor: gpSorted.map(g => getColor('Grupo', g[0])), borderRadius:4 }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins:{legend:{display:false}} }
+            });
+        }
+
+        // --- SEMESTRAL ---
+        function updateSemestralView() {
+            if(meses6Fechados.length === 0) return;
+
+            const dados6m = globalOuvidorias.filter(r => meses6Fechados.includes(getMonthYear(r['Data de abertura'] || r['Data da ouvidoria'])));
+            const total = dados6m.length;
+            
+            const volMes = {}; const atdMes = {}; const raMes = {}; const nivMes = { 'L1':{}, 'L2':{}, 'L3':{}, 'L4':{} };
+            const subcatsSem = {}; const planosSem = {}; const gruposSem = {}; 
+            const catNivelSem = {}; 
+            let combinacoesPlanosSub = [];
+
+            meses6Fechados.forEach(m => {
+                volMes[m] = 0; raMes[m] = 0; atdMes[m] = globalAtendimentos[m] || 0;
+                ['L1','L2','L3','L4'].forEach(n => nivMes[n][m] = 0);
+            });
+
+            dados6m.forEach(r => {
+                const m = getMonthYear(r['Data de abertura'] || r['Data da ouvidoria']);
+                const nv = r['Nível']; const cat = r['Sub Categoria'];
+                const pl = r['Plano']; const gp = r['Grupo'];
+
+                volMes[m]++;
+                if(String(r['Reclame Aqui']).trim().toUpperCase() === 'TRUE') raMes[m]++;
+                if(!isIgnored(nv) && nivMes[nv] !== undefined) nivMes[nv][m]++;
+
+                if(!isIgnored(cat)) subcatsSem[cat] = (subcatsSem[cat] || 0) + 1;
+                if(!isIgnored(pl)) planosSem[pl] = (planosSem[pl] || 0) + 1;
+                if(!isIgnored(gp)) gruposSem[gp] = (gruposSem[gp] || 0) + 1;
+
+                if(!isIgnored(nv) && !isIgnored(cat)) {
+                    if(!catNivelSem[nv]) catNivelSem[nv] = {};
+                    catNivelSem[nv][cat] = (catNivelSem[nv][cat] || 0) + 1;
+                }
+
+                if(!isIgnored(pl) && !isIgnored(cat)) {
+                    let comboStr = `${pl} - ${cat}`;
+                    let existente = combinacoesPlanosSub.find(x => x.combo === comboStr);
+                    if(existente) existente.val++;
+                    else combinacoesPlanosSub.push({combo: comboStr, pl: pl, cat: cat, val: 1});
+                }
+            });
+
+            let totalAtd = 0; meses6Fechados.forEach(m => totalAtd += atdMes[m]);
+            const avgTaxa = totalAtd > 0 ? ((total / totalAtd) * 100).toFixed(2).replace('.', ',') : '-';
+
+            document.getElementById('kpiAtdSemestral').innerText = totalAtd > 0 ? totalAtd.toLocaleString('pt-BR') : '-';
+            document.getElementById('kpiTotalSemestral').innerText = total;
+            document.getElementById('kpiTaxaSemestral').innerText = avgTaxa !== '-' ? avgTaxa + '%' : '-';
+
+            const labelsMesesMascara = meses6Fechados.map(m => nomeMes(m));
+
+            const txOuv = meses6Fechados.map(m => atdMes[m] > 0 ? ((volMes[m]/atdMes[m])*100).toFixed(2) : 0);
+            destroyChart('chartEvolucaoTaxa');
+            chartInstances['chartEvolucaoTaxa'] = new Chart(document.getElementById('chartEvolucaoTaxa').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labelsMesesMascara,
+                    datasets: [
+                        { label: 'Taxa de Ouvidoria (%)', data: txOuv, type: 'line', borderColor: '#00C48C', backgroundColor: '#00C48C', borderWidth: 3, tension: 0.3, yAxisID: 'y', order: 1 },
+                        { label: 'Ouvidorias Absolutas', data: meses6Fechados.map(m=>volMes[m]), type: 'bar', backgroundColor: '#0f766e', borderRadius: 4, yAxisID: 'y1', order: 2 },
+                        { label: 'Total Atendimentos', data: meses6Fechados.map(m=>atdMes[m]), type: 'bar', backgroundColor: '#e2e8f0', borderRadius: 4, yAxisID: 'y2', order: 3 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { mode: 'index', intersect: false } }, scales: { y: { type: 'linear', display: true, position: 'left', title: {display:true, text:'Taxa %'} }, y1: { type: 'linear', display: true, position: 'right', grid: {drawOnChartArea:false}, title: {display:true, text:'Ouvidorias'} }, y2: { type: 'linear', display: false, position: 'right', grid: {drawOnChartArea:false} } } }
+            });
+
+            // Niveis (Alterado para Barras Lado a Lado para os números não se esmagarem)
+            destroyChart('chartEvolucaoNiveis');
+            chartInstances['chartEvolucaoNiveis'] = new Chart(document.getElementById('chartEvolucaoNiveis').getContext('2d'), {
+                type: 'bar',
+                data: { labels: labelsMesesMascara, datasets: ['L1','L2','L3','L4'].map((n) => ({ label: n, data: meses6Fechados.map(m => nivMes[n][m]), backgroundColor: getColor('Nível', n), borderRadius: 3 })) },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    scales: { x: { stacked: false }, y: { stacked: false } }, // <-- Mágica acontece aqui: desempilhar barras
+                    plugins: { legend: { position: 'bottom', labels: {boxWidth: 10, font: {size: 11}} } } 
+                }
+            });
+
+            destroyChart('chartEvolucaoRA');
+            chartInstances['chartEvolucaoRA'] = new Chart(document.getElementById('chartEvolucaoRA').getContext('2d'), {
+                type: 'line',
+                data: { labels: labelsMesesMascara, datasets: [{ label: 'Casos Reclame Aqui', data: meses6Fechados.map(m => raMes[m]), borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', fill:true, tension:0.3 }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const top5SubNomes = Object.entries(subcatsSem).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x => x[0]);
+            const datasetsSubcats = top5SubNomes.map((sub) => {
+                return { label: sub, data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(r['Data de abertura'] || r['Data da ouvidoria']) === m && r['Sub Categoria'] === sub).length), backgroundColor: getColor('Sub Categoria', sub), borderRadius: 3 };
+            });
+            destroyChart('chartTopSubcatsSemestral');
+            chartInstances['chartTopSubcatsSemestral'] = new Chart(document.getElementById('chartTopSubcatsSemestral').getContext('2d'), {
+                type: 'bar', data: { labels: labelsMesesMascara, datasets: datasetsSubcats },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {boxWidth: 10, font: {size: 11}} } } }
+            });
+
+            const top5PlanosNomes = Object.entries(planosSem).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x => x[0]);
+            const datasetsPlanos = top5PlanosNomes.map((plano) => {
+                return { label: plano, data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(r['Data de abertura'] || r['Data da ouvidoria']) === m && r['Plano'] === plano).length), backgroundColor: getColor('Plano', plano), borderRadius: 3 };
+            });
+            destroyChart('chartPlanosSemestral');
+            chartInstances['chartPlanosSemestral'] = new Chart(document.getElementById('chartPlanosSemestral').getContext('2d'), {
+                type: 'bar', data: { labels: labelsMesesMascara, datasets: datasetsPlanos },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {boxWidth: 10, font: {size: 11}} } } }
+            });
+
+            const niveisValidos = Object.keys(catNivelSem).filter(n=>n!=='Sem Nível' && !isIgnored(n)).sort();
+            const datasetsCatNivelSem = niveisValidos.map((nivel) => {
+                const cats = catNivelSem[nivel];
+                const topSub = Object.keys(cats).reduce((a,b) => cats[a]>cats[b]?a:b);
+                return { label: `[${nivel}] ${topSub}`, data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(r['Data de abertura'] || r['Data da ouvidoria']) === m && r['Nível'] === nivel && r['Sub Categoria'] === topSub).length), backgroundColor: getColor('Nível', nivel), borderRadius: 3 };
+            });
+            destroyChart('chartCategoriaNivelSemestral');
+            chartInstances['chartCategoriaNivelSemestral'] = new Chart(document.getElementById('chartCategoriaNivelSemestral').getContext('2d'), {
+                type: 'bar', data: { labels: labelsMesesMascara, datasets: datasetsCatNivelSem },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {boxWidth: 10, font: {size: 11}} } } }
+            });
+
+            combinacoesPlanosSub.sort((a,b) => b.val - a.val);
+            const top5Combos = combinacoesPlanosSub.slice(0, 5);
+            const datasetsPlanoSubSem = top5Combos.map((item, index) => {
+                return { 
+                    label: item.combo, 
+                    data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(r['Data de abertura'] || r['Data da ouvidoria']) === m && r['Plano'] === item.pl && r['Sub Categoria'] === item.cat).length), 
+                    backgroundColor: colorPalette[index % colorPalette.length], 
+                    borderRadius: 3 
+                };
+            });
+            destroyChart('chartPlanoSubcatSemestral');
+            chartInstances['chartPlanoSubcatSemestral'] = new Chart(document.getElementById('chartPlanoSubcatSemestral').getContext('2d'), {
+                type: 'bar', data: { labels: labelsMesesMascara, datasets: datasetsPlanoSubSem },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {boxWidth: 10, font: {size: 11}} } } }
+            });
+
+            const top5GruposNomes = Object.entries(gruposSem).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x => x[0]);
+            const datasetsGrupos = top5GruposNomes.map((grupo) => {
+                return { label: grupo, data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(r['Data de abertura'] || r['Data da ouvidoria']) === m && r['Grupo'] === grupo).length), backgroundColor: getColor('Grupo', grupo), borderRadius: 3 };
+            });
+            destroyChart('chartGruposSemestral');
+            chartInstances['chartGruposSemestral'] = new Chart(document.getElementById('chartGruposSemestral').getContext('2d'), {
+                type: 'bar', data: { labels: labelsMesesMascara, datasets: datasetsGrupos },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: {boxWidth: 10, font: {size: 11}} } } }
+            });
+        }
+
+        // ==========================================
+        // UPLOAD OUVIDORIAS (CSV)
+        // ==========================================
+        document.getElementById('csvOuvidorias').addEventListener('change', e => {
+            const f = e.target.files[0];
+            if(!f) return;
+            document.getElementById('statusOuvidorias').innerText = 'A processar...';
+            Papa.parse(f, { header: true, skipEmptyLines: true, complete: res => {
+                globalOuvidorias = res.data.filter(r => r['Data de abertura'] || r['Data da ouvidoria']);
+                document.getElementById('statusOuvidorias').innerText = 'Sucesso! Ouvidorias carregadas.';
+                processData();
+            }});
+        });
+
+        // ==========================================
+        // MODAL E LÓGICA DE COLAR ATENDIMENTOS 
+        // ==========================================
+        function abrirModalAtendimentos() {
+            document.getElementById('modalAtendimentos').classList.remove('hidden');
+            document.getElementById('previewAtendimentos').classList.add('hidden');
+        }
+
+        function fecharModalAtendimentos() {
+            document.getElementById('modalAtendimentos').classList.add('hidden');
+        }
+
+        function processarTextoPasted() {
+            const text = document.getElementById('pasteArea').value;
+            const lines = text.split(/\r?\n/);
+            let tempSums = {};
+            let countLines = 0;
+
+            lines.forEach(line => {
+                let cleanLine = line.trim().toLowerCase();
+                if (!cleanLine || cleanLine.includes('total') || cleanLine.includes('resumo')) return;
+
+                let matchDate = line.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/);
+                
+                if (matchDate) {
+                    let month = matchDate[2].padStart(2, '0');
+                    let year = matchDate[3].length === 2 ? '20' + matchDate[3] : matchDate[3];
+                    let mesAno = `${month}/${year}`;
+
+                    let lineSemData = line.replace(matchDate[0], '');
+                    let nums = lineSemData.match(/\b\d{1,3}(?:\.\d{3})*\b|\b\d+\b/g);
+                    let maxNum = 0;
+
+                    if (nums) {
+                        nums.forEach(n => {
+                            let parsed = parseInt(n.replace(/\./g, ''), 10);
+                            if (!isNaN(parsed) && parsed > maxNum) maxNum = parsed;
+                        });
+                    }
+
+                    if (maxNum > 0) {
+                        tempSums[mesAno] = (tempSums[mesAno] || 0) + maxNum;
+                        countLines++;
+                    }
+                }
+            });
+
+            const preview = document.getElementById('previewAtendimentos');
+            preview.classList.remove('hidden');
+
+            if (countLines > 0) {
+                globalAtendimentos = tempSums;
+                
+                let html = '<div class="text-sm font-bold text-bling-600 mb-3 border-b pb-2">✓ Sucesso! Veja a soma extraída:</div>';
+                html += '<div class="grid grid-cols-2 gap-2 text-sm">';
+                
+                Object.keys(tempSums).sort().forEach(m => {
+                    html += `
+                        <div class="bg-white p-2 rounded border border-slate-200 flex justify-between items-center shadow-sm">
+                            <span class="text-slate-500 font-medium">${m}</span>
+                            <span class="font-mono font-bold text-bling-600">${tempSums[m].toLocaleString('pt-BR')} tickets</span>
+                        </div>`;
+                });
+                
+                html += '</div>';
+                html += `
+                    <div class="mt-4 flex justify-end">
+                        <button onclick="fecharEAtualizarDashboard()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-6 rounded-lg transition-colors text-sm">
+                            Confirmar e Atualizar Dashboard
+                        </button>
+                    </div>`;
+                
+                preview.innerHTML = html;
+                document.getElementById('statusAtendimentos').innerText = 'Base manual ativa e somada.';
+                document.getElementById('statusAtendimentos').classList.replace('text-slate-400', 'text-bling-500');
+            } else {
+                preview.innerHTML = '<div class="text-red-500 text-sm font-bold p-2 bg-red-50 rounded border border-red-200">Não foi possível encontrar datas e números válidos no texto colado.</div>';
+            }
+        }
+
+        function fecharEAtualizarDashboard() {
+            fecharModalAtendimentos();
+            if(globalOuvidorias.length > 0) {
+                processData();
+            } else {
+                updateMensalView();
+                updateSemestralView();
+            }
+        }
+
+        // --- MOCK INICIAL ---
+        const mockOuvidorias = `Data de abertura,Nível,Sub Categoria,Grupo,Plano,Data de conclusão,Reclame Aqui
+01/01/2026,L1,Dúvida Login,Fintech,Cobalto,05/01/2026,FALSE
+15/02/2026,L2,Cancelamento,Minha Conta,Titânio Tier 1,16/02/2026,TRUE
+20/03/2026,L1,Acesso Lentidão,Suporte,Titânio Tier 2,25/03/2026,FALSE
+10/04/2026,L3,Bug App,Fintech,Titânio Tier 3,15/04/2026,TRUE
+05/05/2026,L2,Taxa Indevida,Certificado,Diamante,06/05/2026,FALSE
+10/06/2026,L1,Dúvida Login,Fintech,Elite,12/06/2026,FALSE
+11/06/2026,L1,Dúvida Funcionalidade,Fintech,Cobalto,13/06/2026,FALSE
+15/06/2026,L2,Cancelamento,Minha Conta,Titânio Tier 1,18/06/2026,TRUE
+02/07/2026,L4,Exceção Regra,Minha Conta,Elite,05/07/2026,TRUE`; 
+
+// // INSIRA AQUI OS SEUS DOIS LINKS PUBLICAÇÕES DO GOOGLE SHEETS
+const urlOuvidorias = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR28q6ZUxLor4dwDrJAVeeYJVBuSXqldZscdGAGAK5ldiOzmtJwnIaZgEkmdSGx_sjKmy-qlYbhwtWm/pubhtml?gid=0&single=true";
+const urlAtendimentos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR28q6ZUxLor4dwDrJAVeeYJVBuSXqldZscdGAGAK5ldiOzmtJwnIaZgEkmdSGx_sjKmy-qlYbhwtWm/pubhtml?gid=412577498&single=true";
+
+window.onload = () => {
+    document.getElementById('statusOuvidorias').innerText = 'Sincronizando...';
+    document.getElementById('statusAtendimentos').innerText = 'Sincronizando...';
+
+    Promise.all([
+        new Promise((resolve, reject) => Papa.parse(urlOuvidorias, { download: true, header: true, skipEmptyLines: true, complete: resolve, error: reject })),
+        new Promise((resolve, reject) => Papa.parse(urlAtendimentos, { download: true, header: true, skipEmptyLines: true, complete: resolve, error: reject }))
+    ]).then(resultados => {
+        const dadosOuvidorias = resultados[0].data;
+        const dadosAtendimentos = resultados[1].data;
+
+        // 1. Processa Ouvidorias (Aceita "Data de abertura", "Data da ouvidoria" ou só "Data")
+        globalOuvidorias = dadosOuvidorias.filter(r => r['Data de abertura'] || r['Data da ouvidoria'] || r['Data'] || r['data']);
+
+        // 2. Processa Atendimentos (Aceita pontos nos números ex: "20.142" e soma por mês)
+        globalAtendimentos = {};
+        dadosAtendimentos.forEach(linha => {
+            let dataAtd = linha['Data'] || linha['data'] || linha['DATA'] || Object.values(linha)[0];
+            let valBruto = linha['Total'] || linha['total'] || linha['TOTAL'] || Object.values(linha)[1] || '0';
+            
+            // Limpa pontos e converte para número inteiro
+            let totalAtd = parseInt(String(valBruto).replace(/\./g, '').trim(), 10);
+
+            if (dataAtd && !isNaN(totalAtd)) {
+                let partes = String(dataAtd).trim().split('/');
+                if (partes.length === 3) {
+                    let mesAno = partes[1].padStart(2, '0') + '/' + partes[2];
+                    globalAtendimentos[mesAno] = (globalAtendimentos[mesAno] || 0) + totalAtd;
+                }
+            }
+        });
+
+        // Atualiza avisos na tela
+        document.getElementById('statusOuvidorias').innerText = '✓ Planilha conectada!';
+        document.getElementById('statusAtendimentos').innerText = '✓ Planilha conectada!';
+
+        // 3. Monta a dashboard na tela
+        processData();
+
+    }).catch(err => {
+        console.error("Erro na leitura das planilhas:", err);
+        alert("Atenção: Não foi possível ler as planilhas do Google Sheets. Verifique se os links estão corretos ou pressione F12 para mais detalhes.");
+    });
+};
