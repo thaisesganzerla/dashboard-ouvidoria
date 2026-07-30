@@ -40,7 +40,7 @@
 </head>
 <body class="min-h-screen p-4 md:p-8 max-w-7xl mx-auto">
 
-    <!-- Banner de Aviso/Erro de Dados -->
+    <!-- Banner de Erro de Processamento -->
     <div id="errorBanner" class="hidden mb-6 bg-red-500/20 border border-red-500/50 text-red-200 p-4 rounded-2xl">
         <h3 class="font-bold text-red-400">⚠️ Erro de Processamento</h3>
         <p class="text-xs mt-1" id="errorMessage"></p>
@@ -782,11 +782,21 @@
             });
         }
 
-        // CARREGAMENTO AUTOMÁTICO COM SUPORTE A DUPLA EXTENSÃO E LINHAS EM BRANCO
+        // CARREGAMENTO DIRETO VIA RAW GITHUB USERCONTENT (GARANTE SUPORTE ABSOLUTO)
         window.onload = () => {
             const statusText = document.getElementById('statusSyncText');
             const errorBanner = document.getElementById('errorBanner');
             const errorMessage = document.getElementById('errorMessage');
+
+            // URLs diretas com fallback automatico
+            const urlsOuvidorias = [
+                "https://raw.githubusercontent.com/thaisesganzerla/dashboard-ouvidoria/main/ouvidorias.csv.csv",
+                "https://raw.githubusercontent.com/thaisesganzerla/dashboard-ouvidoria/main/ouvidorias.csv"
+            ];
+            const urlsAtendimentos = [
+                "https://raw.githubusercontent.com/thaisesganzerla/dashboard-ouvidoria/main/atendimentos.csv.csv",
+                "https://raw.githubusercontent.com/thaisesganzerla/dashboard-ouvidoria/main/atendimentos.csv"
+            ];
 
             const fetchCSV = (urls) => {
                 return new Promise((resolve) => {
@@ -808,16 +818,15 @@
             };
 
             Promise.all([
-                fetchCSV(["./ouvidorias.csv", "./ouvidorias.csv.csv"]),
-                fetchCSV(["./atendimentos.csv", "./atendimentos.csv.csv"])
+                fetchCSV(urlsOuvidorias),
+                fetchCSV(urlsAtendimentos)
             ]).then(([dadosOuv, dadosAtd]) => {
 
-                // Filtra linhas vazias do cabeçalho
                 globalOuvidorias = dadosOuv.filter(r => getRowDate(r));
 
                 if (globalOuvidorias.length === 0 && dadosOuv.length > 0) {
                     const colunasIdentificadas = Object.keys(dadosOuv[0]).join(' | ');
-                    throw new Error(`As colunas foram lidas, mas não encontramos a data. <br><b>Colunas identificadas no CSV:</b> <br><code class="text-xs text-amber-300">${colunasIdentificadas}</code>`);
+                    throw new Error(`As colunas foram lidas, mas não encontramos a data. <br><b>Colunas identificadas:</b> <br><code class="text-xs text-amber-300">${colunasIdentificadas}</code>`);
                 }
 
                 globalAtendimentos = {};
