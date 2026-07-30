@@ -344,23 +344,39 @@
             return v === 'não informado' || v === 'não informada' || v === 'sem grupo' || v === 'sem nível' || v === '';
         }
 
+        // Limpa strings removendo caracteres ocultos do Excel
+        function cleanString(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/^\ufeff/, '')
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-z0-9]/g, "")
+                .trim();
+        }
+
         function getField(row, targetNames) {
-            for (let key in row) {
-                const normKey = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            if (!row) return '';
+            const rowKeys = Object.keys(row);
+            for (let key of rowKeys) {
+                const normKey = cleanString(key);
                 for (let target of targetNames) {
-                    const normTarget = target.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-                    if (normKey === normTarget) return row[key];
+                    const normTarget = cleanString(target);
+                    if (normKey === normTarget || normKey.includes(normTarget)) {
+                        return row[key] || '';
+                    }
                 }
             }
             return '';
         }
 
         function getRowDate(row) {
-            return getField(row, ['Data da ouvidoria', 'Data de abertura', 'Data']);
+            return getField(row, ['Data da ouvidoria', 'Data de abertura', 'Data abertura', 'Data']);
         }
 
         function getClassificacao(row) {
-            return getField(row, ['Classificação', 'Classificacao']);
+            return getField(row, ['Classificacao', 'Classificacao']);
         }
 
         function baixarDashboard() {
@@ -407,17 +423,25 @@
             if(tab === 'semestral') updateSemestralView();
         }
 
+        // Extrator de Mês/Ano flexível para 14/09/2022 ou 14-09-2022
         function getMonthYear(dateStr) {
             if (!dateStr) return null;
-            const parts = dateStr.trim().split('/');
-            if (parts.length === 3) return `${parts[1].padStart(2, '0')}/${parts[2]}`;
+            const clean = String(dateStr).trim().replace(/-/g, '/');
+            const parts = clean.split('/');
+            if (parts.length === 3) {
+                // Se a data for YYYY/MM/DD
+                if (parts[0].length === 4) return `${parts[1].padStart(2, '0')}/${parts[0]}`;
+                // Se a data for DD/MM/YYYY
+                return `${parts[1].padStart(2, '0')}/${parts[2]}`;
+            }
             if (parts.length === 2) return `${parts[0].padStart(2, '0')}/${parts[1]}`;
             return null;
         }
 
         function parseDateBR(dateStr) {
             if (!dateStr) return null;
-            const parts = dateStr.trim().split('/');
+            const clean = String(dateStr).trim().replace(/-/g, '/');
+            const parts = clean.split('/');
             if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
             return null;
         }
@@ -485,12 +509,12 @@
                 
                 const dStr = getRowDate(row);
                 const dA = parseDateBR(dStr);
-                const dC = parseDateBR(getField(row, ['Data de conclusão', 'Data de Conclusao']));
+                const dC = parseDateBR(getField(row, ['Data de conclusao', 'Data Conclusao']));
                 
                 if (dA && dC && dC >= dA) { totalDias += Math.ceil(Math.abs(dC - dA) / (1000 * 60 * 60 * 24)); totalConcluidos++; }
                 
                 if (dStr) {
-                    const dia = dStr.trim().split('/')[0];
+                    const dia = String(dStr).trim().replace(/-/g, '/').split('/')[0];
                     diasSet.add(dia);
                     if (!raPorDia[dia]) raPorDia[dia] = 0;
                     if (String(raVal).trim().toUpperCase() === 'TRUE') {
@@ -498,7 +522,7 @@
                     }
                 }
 
-                const nv = getField(row, ['Nível', 'Nivel']);
+                const nv = getField(row, ['Nivel', 'Nivel']);
                 const gp = getField(row, ['Grupo']);
                 const cat = getField(row, ['Sub Categoria', 'Subcategoria']);
                 const pl = getField(row, ['Plano']);
@@ -629,7 +653,7 @@
 
             dados6m.forEach(r => {
                 const m = getMonthYear(getRowDate(r));
-                const nv = getField(r, ['Nível', 'Nivel']);
+                const nv = getField(r, ['Nivel', 'Nivel']);
                 const cat = getField(r, ['Sub Categoria', 'Subcategoria']);
                 const pl = getField(r, ['Plano']);
                 const gp = getField(r, ['Grupo']);
@@ -739,7 +763,7 @@
             const datasetsCatNivelSem = niveisValidos.map((nivel) => {
                 const cats = catNivelSem[nivel];
                 const topSub = Object.keys(cats).reduce((a,b) => cats[a]>cats[b]?a:b);
-                return { label: `[${nivel}] ${topSub}`, data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(getRowDate(r)) === m && getField(r, ['Nível', 'Nivel']) === nivel && getField(r, ['Sub Categoria', 'Subcategoria']) === topSub).length), backgroundColor: getColor('Nível', nivel), borderRadius: 3 };
+                return { label: `[${nivel}] ${topSub}`, data: meses6Fechados.map(m => dados6m.filter(r => getMonthYear(getRowDate(r)) === m && getField(r, ['Nivel', 'Nivel']) === nivel && getField(r, ['Sub Categoria', 'Subcategoria']) === topSub).length), backgroundColor: getColor('Nível', nivel), borderRadius: 3 };
             });
             destroyChart('chartCategoriaNivelSemestral');
             chartInstances['chartCategoriaNivelSemestral'] = new Chart(document.getElementById('chartCategoriaNivelSemestral').getContext('2d'), {
@@ -785,6 +809,7 @@
                     Papa.parse(urlOuvidorias, {
                         download: true,
                         header: true,
+                        delimiter: "", // Autodetecta delimitador (, ou ;)
                         skipEmptyLines: true,
                         complete: resolve,
                         error: (err) => reject({ file: 'ouvidorias.csv', err })
@@ -794,6 +819,7 @@
                     Papa.parse(urlAtendimentos, {
                         download: true,
                         header: true,
+                        delimiter: "", // Autodetecta delimitador (, ou ;)
                         skipEmptyLines: true,
                         complete: resolve,
                         error: (err) => reject({ file: 'atendimentos.csv', err })
@@ -806,8 +832,8 @@
                 globalOuvidorias = dadosOuv.filter(r => getRowDate(r));
 
                 if (globalOuvidorias.length === 0 && dadosOuv.length > 0) {
-                    const colunasIdentificadas = Object.keys(dadosOuv[0]).join(', ');
-                    throw new Error(`As colunas do arquivo <b>ouvidorias.csv</b> foram lidas, mas não encontramos a coluna "Data da ouvidoria". Colunas encontradas: <br><code class="text-xs text-amber-300">${colunasIdentificadas}</code>`);
+                    const colunasIdentificadas = Object.keys(dadosOuv[0]).join(' | ');
+                    throw new Error(`As colunas foram lidas, mas não encontramos a data. <br><b>Colunas identificadas no CSV:</b> <br><code class="text-xs text-amber-300">${colunasIdentificadas}</code>`);
                 }
 
                 globalAtendimentos = {};
@@ -817,7 +843,7 @@
                     
                     if (ma) {
                         let numVal = 0;
-                        const atdField = getField(row, ['total atendimentos diários', 'total atendimentos diarios', 'total atendimentos']);
+                        const atdField = getField(row, ['total atendimentos diarios', 'total atendimentos', 'atendimentos']);
                         if (atdField) {
                             let raw = String(atdField).replace(/\./g, '').replace(',', '.').trim();
                             let parsed = parseFloat(raw);
@@ -845,7 +871,7 @@
                 if (statusText) statusText.innerText = 'Erro de leitura';
                 if (errorBanner) {
                     errorBanner.classList.remove('hidden');
-                    errorMessage.innerHTML = err.message || 'Ocorreu um erro ao ler o arquivo CSV.';
+                    errorMessage.innerHTML = err.message || 'Ocorreu um erro ao ler os arquivos CSV.';
                 }
             });
         };
