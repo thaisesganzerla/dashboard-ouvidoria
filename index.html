@@ -44,7 +44,7 @@
         <div class="flex items-center gap-4">
             <div id="statusSync" class="flex items-center gap-2 text-xs font-medium text-[#80EF63] bg-[#80EF63]/10 px-3 py-2 rounded-xl border border-[#80EF63]/20">
                 <span class="w-2.5 h-2.5 rounded-full bg-[#80EF63] animate-pulse"></span>
-                <span>Sincronizando dados...</span>
+                <span id="statusSyncText">Sincronizando dados...</span>
             </div>
             <button onclick="baixarDashboard()" class="bg-[#80EF63] hover:bg-[#6be34d] text-[#031E1C] py-2 px-4 rounded-xl font-bold shadow text-sm transition-colors whitespace-nowrap">
                 📸 Baixar Imagem
@@ -191,7 +191,7 @@
             display: (c) => c.dataset.data[c.dataIndex] > 0,
             color: '#ffffff',
             font: { weight: 'bold', size: 10 },
-            formatter: (val) => val.toLocaleString('pt-BR')
+            formatter: (val) => typeof val === 'number' ? val.toLocaleString('pt-BR') : val
         });
 
         let rawOuvidorias = [];
@@ -199,13 +199,13 @@
         let listaMeses = [];
         let chartInstances = {};
 
-        const palette = ['#80EF63', '#38bdf8', '#fb923c', '#f43f5e', '#a855f7', '#34d399', '#fb923c', '#f472b6', '#22d3ee'];
+        const palette = ['#80EF63', '#38bdf8', '#fb923c', '#f43f5e', '#a855f7', '#34d399', '#fbbf24', '#f472b6', '#22d3ee'];
 
         function findValue(row, possibleKeys) {
             for (let k of Object.keys(row)) {
                 let cleanK = k.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 for (let p of possibleKeys) {
-                    if (cleanK.includes(p.toLowerCase())) return row[k];
+                    if (cleanK === p.toLowerCase() || cleanK.includes(p.toLowerCase())) return row[k];
                 }
             }
             return '';
@@ -287,13 +287,13 @@
             });
 
             if (listaMeses.length === 0) {
-                document.getElementById('statusSync').innerText = '⚠️ Erro na leitura de datas';
+                document.getElementById('statusSyncText').innerText = '⚠️ Erro na leitura de datas';
                 return;
             }
 
             listaMeses.forEach(m => select.add(new Option(m, m)));
             select.value = listaMeses[listaMeses.length - 1];
-            document.getElementById('statusSync').innerText = '✅ Sincronizado';
+            document.getElementById('statusSyncText').innerText = '✅ Sincronizado';
 
             renderMensal();
         }
@@ -311,7 +311,8 @@
             const totalAtd = rawAtendimentos[m] || 0;
 
             let totalDias = 0; let concluidos = 0;
-            const grupos = {}; const niveis = {}; const classif = {}; const subcats = {}; const planos = {}; const raPorDia = {};
+            const grupos = {}; const niveis = {}; const classif = {}; const subcats = {}; const planos = {}; 
+            const raPorDia = {}; const catNivel = {}; const planoSubcat = {};
 
             dados.forEach(r => {
                 let dA = parseDate(findValue(r, ['data da ouvidoria', 'data de abertura', 'data']));
@@ -324,7 +325,7 @@
                 let dStr = findValue(r, ['data da ouvidoria', 'data de abertura', 'data']);
                 if (dStr) {
                     let dia = String(dStr).split('/')[0];
-                    let isRA = String(findValue(r, ['reclame aqui', 'ra'])).toLowerCase() === 'true';
+                    let isRA = String(findValue(r, ['reclame aqui', 'ra'])).toUpperCase() === 'TRUE';
                     if (isRA) raPorDia[dia] = (raPorDia[dia] || 0) + 1;
                 }
 
@@ -339,6 +340,15 @@
                 if (c.trim()) classif[c] = (classif[c] || 0) + 1;
                 if (sub.trim()) subcats[sub] = (subcats[sub] || 0) + 1;
                 if (pl.trim()) planos[pl] = (planos[pl] || 0) + 1;
+
+                if (n.trim() && sub.trim()) {
+                    if (!catNivel[n]) catNivel[n] = {};
+                    catNivel[n][sub] = (catNivel[n][sub] || 0) + 1;
+                }
+                if (pl.trim() && sub.trim()) {
+                    if (!planoSubcat[pl]) planoSubcat[pl] = {};
+                    planoSubcat[pl][sub] = (planoSubcat[pl][sub] || 0) + 1;
+                }
             });
 
             document.getElementById('kpiTotalMensal').innerText = totalOuv.toLocaleString('pt-BR');
@@ -346,7 +356,7 @@
             document.getElementById('kpiTaxaMensal').innerText = totalAtd > 0 ? ((totalOuv / totalAtd) * 100).toFixed(2).replace('.', ',') + '%' : '0,00%';
             document.getElementById('kpiTMRMensal').innerText = concluidos > 0 ? (totalDias / concluidos).toFixed(1).replace('.', ',') : '-';
 
-            // Gráficos Mensais
+            // 1. Reclame Aqui
             let diasSorted = Object.keys(raPorDia).sort((a,b) => parseInt(a)-parseInt(b));
             destroyChart('chartRAMensalLinha');
             chartInstances['chartRAMensalLinha'] = new Chart(document.getElementById('chartRAMensalLinha'), {
@@ -354,18 +364,21 @@
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
+            // 2. Níveis
             destroyChart('chartNiveisMensal');
             chartInstances['chartNiveisMensal'] = new Chart(document.getElementById('chartNiveisMensal'), {
                 type: 'doughnut', data: { labels: Object.keys(niveis), datasets: [{ data: Object.values(niveis), backgroundColor: palette }] },
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
+            // 3. Classificação
             destroyChart('chartClassificacaoMensal');
             chartInstances['chartClassificacaoMensal'] = new Chart(document.getElementById('chartClassificacaoMensal'), {
                 type: 'doughnut', data: { labels: Object.keys(classif), datasets: [{ data: Object.values(classif), backgroundColor: palette.slice().reverse() }] },
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
+            // 4. Top 5 Subcategorias
             let topSub = Object.entries(subcats).sort((a,b)=>b[1]-a[1]).slice(0,5);
             destroyChart('chartTopSubcatsMensal');
             chartInstances['chartTopSubcatsMensal'] = new Chart(document.getElementById('chartTopSubcatsMensal'), {
@@ -373,6 +386,23 @@
                 options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
             });
 
+            // 5. Top Subcategoria por Nível
+            let topCatNivel = Object.keys(catNivel).map(n => {
+                let cats = catNivel[n];
+                let top = Object.keys(cats).reduce((a,b) => cats[a] > cats[b] ? a : b);
+                return { label: `[${n}] ${top}`, val: cats[top] };
+            });
+            destroyChart('chartCategoriaNivelMensal');
+            chartInstances['chartCategoriaNivelMensal'] = new Chart(document.getElementById('chartCategoriaNivelMensal'), {
+                type: 'bar',
+                data: {
+                    labels: topCatNivel.map(x=>x.label),
+                    datasets: [{ label: 'Volume', data: topCatNivel.map(x=>x.val), backgroundColor: '#38bdf8' }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
+            });
+
+            // 6. Planos
             let topPl = Object.entries(planos).sort((a,b)=>b[1]-a[1]).slice(0,5);
             destroyChart('chartPlanosMensal');
             chartInstances['chartPlanosMensal'] = new Chart(document.getElementById('chartPlanosMensal'), {
@@ -380,6 +410,22 @@
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
+            // 7. Top Planos x Subcategorias
+            let topPlanosList = topPl.map(p=>p[0]);
+            let topSubList = topSub.map(s=>s[0]);
+            let datasetsPlanoSub = topSubList.map((sub, idx) => ({
+                label: sub,
+                data: topPlanosList.map(plano => (planoSubcat[plano] && planoSubcat[plano][sub]) || 0),
+                backgroundColor: palette[idx % palette.length]
+            }));
+            destroyChart('chartPlanoSubcatMensal');
+            chartInstances['chartPlanoSubcatMensal'] = new Chart(document.getElementById('chartPlanoSubcatMensal'), {
+                type: 'bar',
+                data: { labels: topPlanosList, datasets: datasetsPlanoSub },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
+            });
+
+            // 8. Grupos
             let topGp = Object.entries(grupos).sort((a,b)=>b[1]-a[1]).slice(0,10);
             destroyChart('chartGruposMensal');
             chartInstances['chartGruposMensal'] = new Chart(document.getElementById('chartGruposMensal'), {
@@ -392,6 +438,7 @@
             let meses6 = listaMeses.slice(-6);
             let totOuv = 0; let totAtd = 0;
             let volOuvMes = []; let volAtdMes = []; let taxaMes = [];
+            let raMes = {}; let nivMes = {}; let classifMes = {}; let subcatsMes = {}; let planosMes = {}; let gruposMes = {};
 
             meses6.forEach(m => {
                 let subData = rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m);
@@ -400,12 +447,30 @@
                 totOuv += ouvCnt; totAtd += atdCnt;
                 volOuvMes.push(ouvCnt); volAtdMes.push(atdCnt);
                 taxaMes.push(atdCnt > 0 ? ((ouvCnt/atdCnt)*100).toFixed(2) : 0);
+
+                subData.forEach(r => {
+                    let isRA = String(findValue(r, ['reclame aqui', 'ra'])).toUpperCase() === 'TRUE';
+                    if (isRA) raMes[m] = (raMes[m] || 0) + 1;
+
+                    let n = findValue(r, ['nivel', 'nível']) || 'Sem Nível';
+                    let c = findValue(r, ['classificacao', 'classificação']) || 'Outros';
+                    let sub = findValue(r, ['sub categoria', 'subcategoria']) || 'Outros';
+                    let pl = findValue(r, ['plano']) || 'Não Informado';
+                    let g = findValue(r, ['grupo']) || 'Não Informado';
+
+                    if (!nivMes[n]) nivMes[n] = {}; nivMes[n][m] = (nivMes[n][m] || 0) + 1;
+                    if (!classifMes[c]) classifMes[c] = {}; classifMes[c][m] = (classifMes[c][m] || 0) + 1;
+                    if (!subcatsMes[sub]) subcatsMes[sub] = 0; subcatsMes[sub]++;
+                    if (!planosMes[pl]) planosMes[pl] = 0; planosMes[pl]++;
+                    if (!gruposMes[g]) gruposMes[g] = 0; gruposMes[g]++;
+                });
             });
 
             document.getElementById('kpiTotalSemestral').innerText = totOuv.toLocaleString('pt-BR');
             document.getElementById('kpiAtdSemestral').innerText = totAtd > 0 ? totAtd.toLocaleString('pt-BR') : '-';
             document.getElementById('kpiTaxaSemestral').innerText = totAtd > 0 ? ((totOuv/totAtd)*100).toFixed(2).replace('.', ',') + '%' : '0,00%';
 
+            // 1. Taxa Evolução
             destroyChart('chartEvolucaoTaxa');
             chartInstances['chartEvolucaoTaxa'] = new Chart(document.getElementById('chartEvolucaoTaxa'), {
                 type: 'bar',
@@ -416,6 +481,80 @@
                         { label: 'Ouvidorias', data: volOuvMes, backgroundColor: '#0e524b', yAxisID: 'y1' }
                     ]
                 },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // 2. Evolução Níveis
+            let datasetsNiveis = Object.keys(nivMes).map((n, idx) => ({
+                label: n, data: meses6.map(m => (nivMes[n] && nivMes[n][m]) || 0), backgroundColor: palette[idx % palette.length]
+            }));
+            destroyChart('chartEvolucaoNiveis');
+            chartInstances['chartEvolucaoNiveis'] = new Chart(document.getElementById('chartEvolucaoNiveis'), {
+                type: 'bar', data: { labels: meses6, datasets: datasetsNiveis },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // 3. Classificação Semestral
+            let datasetsClassif = Object.keys(classifMes).map((c, idx) => ({
+                label: c, data: meses6.map(m => (classifMes[c] && classifMes[c][m]) || 0), backgroundColor: palette[idx % palette.length]
+            }));
+            destroyChart('chartClassificacaoSemestral');
+            chartInstances['chartClassificacaoSemestral'] = new Chart(document.getElementById('chartClassificacaoSemestral'), {
+                type: 'bar', data: { labels: meses6, datasets: datasetsClassif },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // 4. RA Mês a Mês
+            destroyChart('chartEvolucaoRA');
+            chartInstances['chartEvolucaoRA'] = new Chart(document.getElementById('chartEvolucaoRA'), {
+                type: 'line', data: { labels: meses6, datasets: [{ label: 'Reclame Aqui', data: meses6.map(m => raMes[m] || 0), borderColor: '#f43f5e', backgroundColor: 'rgba(244,63,94,0.15)', fill: true }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // 5. Top 5 Subcategorias Mês a Mês
+            let top5SubSem = Object.entries(subcatsMes).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]);
+            let datasetsSubSem = top5SubSem.map((sub, idx) => ({
+                label: sub, data: meses6.map(m => rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m && findValue(r, ['sub categoria', 'subcategoria']) === sub).length), backgroundColor: palette[idx % palette.length]
+            }));
+            destroyChart('chartTopSubcatsSemestral');
+            chartInstances['chartTopSubcatsSemestral'] = new Chart(document.getElementById('chartTopSubcatsSemestral'), {
+                type: 'bar', data: { labels: meses6, datasets: datasetsSubSem },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // 6. Planos Mês a Mês
+            let top5PlSem = Object.entries(planosMes).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]);
+            let datasetsPlSem = top5PlSem.map((pl, idx) => ({
+                label: pl, data: meses6.map(m => rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m && findValue(r, ['plano']) === pl).length), backgroundColor: palette[idx % palette.length]
+            }));
+            destroyChart('chartPlanosSemestral');
+            chartInstances['chartPlanosSemestral'] = new Chart(document.getElementById('chartPlanosSemestral'), {
+                type: 'bar', data: { labels: meses6, datasets: datasetsPlSem },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // 7. Top Subcategoria por Nível Mês a Mês
+            destroyChart('chartCategoriaNivelSemestral');
+            chartInstances['chartCategoriaNivelSemestral'] = new Chart(document.getElementById('chartCategoriaNivelSemestral'), {
+                type: 'bar', data: { labels: meses6, datasets: datasetsNiveis },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // 8. Top Planos x Subcategorias Mês a Mês
+            destroyChart('chartPlanoSubcatSemestral');
+            chartInstances['chartPlanoSubcatSemestral'] = new Chart(document.getElementById('chartPlanoSubcatSemestral'), {
+                type: 'bar', data: { labels: meses6, datasets: datasetsPlSem },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // 9. Top 5 Grupos Mês a Mês
+            let top5GpSem = Object.entries(gruposMes).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]);
+            let datasetsGpSem = top5GpSem.map((gp, idx) => ({
+                label: gp, data: meses6.map(m => rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m && findValue(r, ['grupo']) === gp).length), backgroundColor: palette[idx % palette.length]
+            }));
+            destroyChart('chartGruposSemestral');
+            chartInstances['chartGruposSemestral'] = new Chart(document.getElementById('chartGruposSemestral'), {
+                type: 'bar', data: { labels: meses6, datasets: datasetsGpSem },
                 options: { responsive: true, maintainAspectRatio: false }
             });
         }
