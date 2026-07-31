@@ -81,6 +81,11 @@
     <label class="upload-btn">📂 Base Ouvidorias<input type="file" accept=".csv" onchange="loadCSV('ouvidorias',this)"></label>
     <label class="upload-btn">📂 Base Atendimentos<input type="file" accept=".csv" onchange="loadCSV('atendimentos',this)"></label>
     
+    <!-- Elementos que o Javascript precisa achar: -->
+    <span id="status-ouv" class="status-pending">⏳ Ouvidorias pendentes</span>
+    <span style="color:#ccc;">·</span>
+    <span id="status-atd" class="status-pending">⏳ Atendimentos pendentes</span>
+    
     <div class="filter-area">
       <label>Mês:</label>
       <select id="monthSelector" onchange="renderTabs()">
@@ -257,10 +262,10 @@ function loadCSV(type, input) {
                 const cols = res.meta.fields || [];
                 
                 if (type === 'ouvidorias') {
-                    // Validação para ajudar a identificar o erro
+                    // Validação extra para garantir os dados
                     let temData = cols.some(c => c.toLowerCase().includes('data'));
                     if (!temData) {
-                        alert("⚠️ Ops! Não achei a coluna de 'Data' nas Ouvidorias.\n\nColunas que eu encontrei:\n" + cols.join(" | "));
+                        alert("⚠️ Ops! Não achei a coluna de 'Data' nas Ouvidorias.\nColunas encontradas:\n" + cols.join(" | "));
                     }
                     rawOuvidorias = res.data;
                     document.getElementById('status-ouv').textContent = '✅ Ouvidorias lidas';
@@ -429,3 +434,5 @@ function renderSemestral() {
     });
 }
 </script>
+</body>
+</html>
