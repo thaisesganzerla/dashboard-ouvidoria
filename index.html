@@ -18,8 +18,15 @@
   .header-title { color: #fff; }
   .header-title p { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.85; }
   .header-title h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; }
-  .logo { color: #fff; font-size: 30px; font-weight: 800; letter-spacing: -1.5px; }
-  .logo span { color: #ffde59; }
+  
+  /* Logo Bling em CSS */
+  .logo-bling { 
+    color: #80EF63; 
+    font-size: 38px; 
+    font-weight: 800; 
+    letter-spacing: -2px; 
+    font-family: 'Inter', system-ui, sans-serif;
+  }
 
   /* Tabs */
   .tabs-bar { background: #1a7a44; padding: 10px 20px; display: flex; gap: 8px; }
@@ -69,7 +76,7 @@
   <!-- HEADER -->
   <div class="header">
     <div class="header-title"><p>Ouvidoria e Qualidade</p><h1>Dashboard Operacional</h1></div>
-    <div class="logo">bling<span>.</span></div>
+    <div class="logo-bling">bling</div>
   </div>
 
   <!-- TABS -->
@@ -78,7 +85,7 @@
     <button class="tab" onclick="setTab(1)">Visão Semestral (6 Meses)</button>
   </div>
 
-  <!-- UPLOAD BAR (Estilo Reclame Aqui) -->
+  <!-- UPLOAD BAR -->
   <div class="upload-bar">
     <label class="upload-btn">📂 Base Ouvidorias<input type="file" accept=".csv" onchange="loadCSV('ouvidorias',this)"></label>
     <label class="upload-btn">📂 Base Atendimentos<input type="file" accept=".csv" onchange="loadCSV('atendimentos',this)"></label>
