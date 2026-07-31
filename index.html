@@ -207,16 +207,11 @@ Chart.defaults.color = '#898781';
 Chart.defaults.set('plugins.datalabels', { 
     display: function(ctx) { 
         let val = ctx.dataset.data[ctx.dataIndex];
-        if (!val || val === 0) return false;
-        
-        // Regra para não espremer números em gráficos empilhados
-        if (ctx.chart.config.options.scales?.x?.stacked || ctx.chart.config.options.scales?.y?.stacked) {
-            return val > 10; // Oculta se o valor for menor que 10 para evitar sobreposição
-        }
-        return true; 
+        // Mostra TUDO que for maior que zero (removi a trava que apagava os menores)
+        return val && val > 0;
     }, 
     color: '#fff', 
-    font: { weight: 'bold', size: 11 },
+    font: { weight: 'bold', size: 10 }, // Fonte tamanho 10 para caber melhor
     anchor: 'center', 
     align: 'center',
     formatter: function(val, ctx) {
@@ -416,8 +411,7 @@ function renderMensal() {
     chartInstances['chartNiveisMensal'] = new Chart(document.getElementById('chartNiveisMensal'), {
         type: 'doughnut', data: { labels: Object.keys(niveis), datasets: [{ data: Object.values(niveis), backgroundColor: palette }] },
         options: { 
-            responsive: true, maintainAspectRatio: false,
-            plugins: { datalabels: { display: function(ctx) { let ds = ctx.dataset.data; let total = ds.reduce((a,b)=>a+b, 0); return ds[ctx.dataIndex] / total > 0.05; } } }
+            responsive: true, maintainAspectRatio: false
         }
     });
 
