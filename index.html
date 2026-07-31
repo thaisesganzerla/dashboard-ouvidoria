@@ -1,574 +1,405 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Ouvidoria | Bling</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        bling: { dark: '#031E1C', darkCard: '#062B28', green: '#80EF63', hover: '#6be34d' }
-                    }
-                }
-            }
-        }
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #031E1C; color: #f8fafc; }
-        .chart-container { position: relative; height: 450px; width: 100%; }
-        .chart-container-large { position: relative; height: 550px; width: 100%; }
-        .tab-active { border-bottom: 3px solid #80EF63; color: #80EF63; font-weight: 700; }
-        .tab-inactive { color: #94a3b8; font-weight: 500; }
-        .tab-inactive:hover { color: #80EF63; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ouvidoria – Dashboard Bling</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #eef2ee; min-height: 100vh; padding: 16px; }
+  .dash { width: 100%; max-width: 960px; margin: 0 auto; }
+
+  /* Header */
+  .header { background: #022726; border-radius: 14px 14px 0 0; padding: 18px 28px; display: flex; align-items: center; justify-content: space-between; }
+  .header-title { color: #fff; }
+  .header-title p { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.85; }
+  .header-title h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; }
+  .logo { color: #fff; font-size: 30px; font-weight: 800; letter-spacing: -1.5px; }
+  .logo span { color: #ffde59; }
+
+  /* Tabs */
+  .tabs-bar { background: #1a7a44; padding: 10px 20px; display: flex; gap: 8px; }
+  .tab { flex: 1; padding: 9px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; color: #a8e6c4; background: transparent; border: 1.5px solid rgba(255,255,255,0.2); text-align: center; transition: all 0.15s; }
+  .tab.active { background: #fff; color: #1a7a44; border-color: #fff; font-weight: 600; }
+  .tab:hover:not(.active) { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.4); }
+
+  /* Upload Bar */
+  .upload-bar { background: #fff; border-bottom: 1px solid #e1e0d9; padding: 10px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .upload-btn { display: flex; align-items: center; gap: 6px; background: #f4fdf7; border: 1.5px dashed #2ebd6b; border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 500; color: #1a7a44; cursor: pointer; }
+  .upload-btn input { display: none; }
+  .status-ok { color: #1a7a44; font-weight: 500; font-size: 11px; }
+  .status-pending { color: #b56a00; font-size: 11px; }
+  
+  .filter-area { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: #1a7a44; }
+  .filter-area select { padding: 4px 8px; border-radius: 6px; border: 1px solid #c5ecd8; background: #f4fdf7; color: #1a7a44; outline: none; font-weight: 600; }
+
+  /* Body */
+  .body { background: #f8faf9; padding: 16px; display: flex; flex-direction: column; gap: 16px; border-radius: 0 0 14px 14px; }
+  
+  .section-title { font-size: 12px; font-weight: 600; color: #fff; background: #2ebd6b; display: inline-block; padding: 4px 14px; border-radius: 20px; }
+  .period-badge { display: inline-block; font-size: 10px; font-weight: 600; background: #e8f9ef; color: #1a7a44; border-radius: 6px; padding: 2px 8px; margin-left: 8px; vertical-align: middle; }
+  
+  .card { background: #fff; border-radius: 12px; border: 0.5px solid #e1e0d9; padding: 16px; position: relative; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  
+  .export-btn { display: flex; align-items: center; gap: 5px; background: #f4fdf7; border: 1px solid #c5ecd8; border-radius: 7px; font-size: 11px; font-weight: 500; color: #1a7a44; padding: 5px 11px; cursor: pointer; white-space: nowrap; }
+  .export-btn:hover { background: #e8f9ef; }
+  
+  /* KPIs */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi-card { background: #f4fdf7; border-radius: 10px; padding: 16px; text-align: center; border: 1px solid #e8f9ef; border-bottom: 3px solid #2ebd6b; }
+  .kpi-card.warning { border-bottom-color: #f5a623; }
+  .kpi-card .kv { font-size: 28px; font-weight: 700; color: #1a7a44; }
+  .kpi-card .kt { font-size: 11px; color: #52514e; margin-top: 4px; font-weight: 600; text-transform: uppercase; }
+  
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  
+  .page { display: none; }
+  .page.active { display: flex; flex-direction: column; gap: 16px; }
+  
+  .exporting .export-btn { display: none !important; }
+</style>
 </head>
-<body class="min-h-screen p-4 md:p-8 max-w-7xl mx-auto">
+<body>
+<div class="dash">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-title"><p>Ouvidoria e Qualidade</p><h1>Dashboard Operacional</h1></div>
+    <div class="logo">bling<span>.</span></div>
+  </div>
 
-    <!-- Header -->
-    <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 bg-[#062B28] p-6 rounded-2xl border border-[#0d423e] shadow-lg">
-        <div>
-            <div class="flex items-center gap-3">
-                <span class="text-3xl font-extrabold text-[#80EF63]">bling</span>
-                <span class="text-xs bg-[#80EF63]/10 text-[#80EF63] border border-[#80EF63]/30 font-bold px-2.5 py-1 rounded-full uppercase">Ouvidoria</span>
-            </div>
-            <h1 class="text-xl font-bold text-white mt-2">📊 Dashboard de Ouvidoria</h1>
-            <p class="text-xs text-slate-300 mt-0.5">Análise Estratégica, Operacional e Produto</p>
-        </div>
-        <div class="flex items-center gap-4">
-            <div id="statusSync" class="flex items-center gap-2 text-xs font-medium text-[#80EF63] bg-[#80EF63]/10 px-3 py-2 rounded-xl border border-[#80EF63]/20">
-                <span class="w-2.5 h-2.5 rounded-full bg-[#80EF63] animate-pulse"></span>
-                <span id="statusSyncText">Sincronizando dados...</span>
-            </div>
-            <button onclick="baixarDashboard()" class="bg-[#80EF63] hover:bg-[#6be34d] text-[#031E1C] py-2 px-4 rounded-xl font-bold shadow text-sm transition-colors whitespace-nowrap">
-                📸 Baixar Imagem
-            </button>
-        </div>
-    </header>
+  <!-- TABS -->
+  <div class="tabs-bar">
+    <button class="tab active" onclick="setTab(0)">Visão Mensal</button>
+    <button class="tab" onclick="setTab(1)">Visão Semestral (6 Meses)</button>
+  </div>
 
-    <!-- Abas -->
-    <div class="border-b border-slate-700/60 mb-6 flex gap-6 overflow-x-auto">
-        <button onclick="switchTab('mensal')" id="tabMensal" class="pb-3 px-2 tab-active transition-all whitespace-nowrap">Visão Mensal</button>
-        <button onclick="switchTab('semestral')" id="tabSemestral" class="pb-3 px-2 tab-inactive transition-all whitespace-nowrap">Visão 6 Meses (Evolução Mês a Mês)</button>
+  <!-- UPLOAD BAR (Estilo Reclame Aqui) -->
+  <div class="upload-bar">
+    <label class="upload-btn">📂 Base Ouvidorias<input type="file" accept=".csv" onchange="loadCSV('ouvidorias',this)"></label>
+    <label class="upload-btn">📂 Base Atendimentos<input type="file" accept=".csv" onchange="loadCSV('atendimentos',this)"></label>
+    
+    <span id="status-ouv" class="status-pending">⏳ Ouvidorias pendentes</span>
+    <span style="color:#ccc;">·</span>
+    <span id="status-atd" class="status-pending">⏳ Atendimentos pendentes</span>
+    
+    <div class="filter-area">
+      <label>Mês:</label>
+      <select id="monthSelector" onchange="renderTabs()">
+        <option value="">Aguardando dados...</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- ══ ABA 0 — VISÃO MENSAL ══ -->
+    <div class="page active" id="page-0">
+      
+      <div class="kpi-grid" id="card-kpis-mensal">
+        <div class="kpi-card"><div class="kv" id="kpiAtdMensal">-</div><div class="kt">Total Atendimentos</div></div>
+        <div class="kpi-card"><div class="kv" id="kpiTotalMensal">-</div><div class="kt">Total Ouvidorias</div></div>
+        <div class="kpi-card"><div class="kv" id="kpiTaxaMensal">-</div><div class="kt">Taxa de Ouvidoria</div></div>
+        <div class="kpi-card warning"><div class="kv" style="color:#b56a00;" id="kpiTMRMensal">-</div><div class="kt">TMR Médio (Dias)</div></div>
+      </div>
+
+      <div class="charts-row">
+        <div class="card" id="card-ra-linha">
+          <div class="card-header"><span class="section-title">Casos Reclame Aqui (Evolução Diária)</span><button class="export-btn" onclick="exportCard('card-ra-linha','ra_diario')">⬇ Exportar</button></div>
+          <div style="position:relative;height:240px;"><canvas id="chartRAMensalLinha"></canvas></div>
+        </div>
+        <div class="card" id="card-niveis">
+          <div class="card-header"><span class="section-title">Volume por Nível</span><button class="export-btn" onclick="exportCard('card-niveis','niveis')">⬇ Exportar</button></div>
+          <div style="position:relative;height:240px;"><canvas id="chartNiveisMensal"></canvas></div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="card" id="card-classificacao">
+          <div class="card-header"><span class="section-title">Distribuição por Classificação</span><button class="export-btn" onclick="exportCard('card-classificacao','classificacao')">⬇ Exportar</button></div>
+          <div style="position:relative;height:240px;"><canvas id="chartClassificacaoMensal"></canvas></div>
+        </div>
+        <div class="card" id="card-topsubcats">
+          <div class="card-header"><span class="section-title">Top 5 Subcategorias</span><button class="export-btn" onclick="exportCard('card-topsubcats','topsubcats')">⬇ Exportar</button></div>
+          <div style="position:relative;height:240px;"><canvas id="chartTopSubcatsMensal"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card" id="card-grupos">
+          <div class="card-header"><span class="section-title">Top Ofensores por Grupo</span><button class="export-btn" onclick="exportCard('card-grupos','grupos')">⬇ Exportar</button></div>
+          <div style="position:relative;height:280px;"><canvas id="chartGruposMensal"></canvas></div>
+      </div>
+
     </div>
 
-    <!-- VISÃO MENSAL -->
-    <div id="viewMensal" class="block">
-        <div class="flex items-center gap-3 mb-6 bg-[#062B28] p-4 rounded-2xl border border-[#0d423e] w-fit">
-            <label class="text-sm font-semibold text-slate-200">Selecione o Mês:</label>
-            <select id="monthSelector" class="bg-[#031E1C] border border-[#80EF63]/40 text-[#80EF63] text-sm font-bold rounded-xl p-2 outline-none" onchange="renderMensal()">
-                <option value="">Carregando...</option>
-            </select>
-        </div>
+    <!-- ══ ABA 1 — VISÃO SEMESTRAL ══ -->
+    <div class="page" id="page-1">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kv" id="kpiAtdSemestral">-</div><div class="kt">Atendimentos (Semestre)</div></div>
+        <div class="kpi-card"><div class="kv" id="kpiTotalSemestral">-</div><div class="kt">Ouvidorias (Semestre)</div></div>
+        <div class="kpi-card"><div class="kv" id="kpiTaxaSemestral">-</div><div class="kt">Taxa Média no Semestre</div></div>
+      </div>
 
-        <section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-[#062B28] p-5 rounded-2xl border border-[#0d423e] border-l-4 border-slate-400">
-                <p class="text-[10px] font-bold text-slate-400 mb-1 uppercase">1. Total Atendimentos</p>
-                <h3 class="text-2xl font-bold text-white" id="kpiAtdMensal">-</h3>
-            </div>
-            <div class="bg-[#062B28] p-5 rounded-2xl border border-[#0d423e] border-l-4 border-[#80EF63]">
-                <p class="text-[10px] font-bold text-[#80EF63] mb-1 uppercase">2. Total Ouvidorias</p>
-                <h3 class="text-2xl font-bold text-white" id="kpiTotalMensal">-</h3>
-            </div>
-            <div class="bg-[#062B28] p-5 rounded-2xl border border-[#0d423e] border-l-4 border-[#80EF63]">
-                <p class="text-[10px] font-bold text-[#80EF63] mb-1 uppercase">3. Taxa de Ouvidoria</p>
-                <h3 class="text-2xl font-bold text-[#80EF63]" id="kpiTaxaMensal">-</h3>
-            </div>
-            <div class="bg-[#062B28] p-5 rounded-2xl border border-[#0d423e] border-l-4 border-amber-400">
-                <p class="text-[10px] font-bold text-amber-400 mb-1 uppercase">TMR Médio (Dias)</p>
-                <h3 class="text-2xl font-bold text-white" id="kpiTMRMensal">-</h3>
-            </div>
-        </section>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-4">Casos Reclame Aqui (Evolução Diária)</h3>
-                <div class="chart-container"><canvas id="chartRAMensalLinha"></canvas></div>
-            </div>
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-4">Volume por Nível</h3>
-                <div class="chart-container"><canvas id="chartNiveisMensal"></canvas></div>
-            </div>
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-4">Distribuição por Classificação</h3>
-                <div class="chart-container"><canvas id="chartClassificacaoMensal"></canvas></div>
-            </div>
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-4">Top 5 Subcategorias</h3>
-                <div class="chart-container"><canvas id="chartTopSubcatsMensal"></canvas></div>
-            </div>
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-4">Top Subcategoria Acionada por Nível</h3>
-                <div class="chart-container"><canvas id="chartCategoriaNivelMensal"></canvas></div>
-            </div>
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-4">Planos mais Acionados</h3>
-                <div class="chart-container"><canvas id="chartPlanosMensal"></canvas></div>
-            </div>
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-1">Top Planos x Subcategorias</h3>
-                <p class="text-xs text-slate-400 mb-4">Volume das 5 principais subcategorias nos 5 principais planos.</p>
-                <div class="chart-container"><canvas id="chartPlanoSubcatMensal"></canvas></div>
-            </div>
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e] lg:col-span-2">
-                <h3 class="text-sm font-bold text-white mb-4">Top Ofensores por Grupo</h3>
-                <div class="chart-container"><canvas id="chartGruposMensal"></canvas></div>
-            </div>
+      <div class="card" id="card-evolucao-taxa" style="margin-bottom: 16px;">
+        <div class="card-header"><span class="section-title">Evolução: Taxa x Volume Absoluto</span><button class="export-btn" onclick="exportCard('card-evolucao-taxa','evolucao_taxa')">⬇ Exportar</button></div>
+        <div style="position:relative;height:350px;"><canvas id="chartEvolucaoTaxa"></canvas></div>
+      </div>
+      
+      <div class="charts-row">
+        <div class="card" id="card-evolucao-niveis">
+          <div class="card-header"><span class="section-title">Evolução de Níveis</span><button class="export-btn" onclick="exportCard('card-evolucao-niveis','evolucao_niveis')">⬇ Exportar</button></div>
+          <div style="position:relative;height:250px;"><canvas id="chartEvolucaoNiveis"></canvas></div>
         </div>
+        <div class="card" id="card-evolucao-ra">
+          <div class="card-header"><span class="section-title">Casos Reclame Aqui</span><button class="export-btn" onclick="exportCard('card-evolucao-ra','evolucao_ra')">⬇ Exportar</button></div>
+          <div style="position:relative;height:250px;"><canvas id="chartEvolucaoRA"></canvas></div>
+        </div>
+      </div>
+
     </div>
 
-    <!-- VISÃO SEMESTRAL -->
-    <div id="viewSemestral" class="hidden">
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="bg-[#062B28] p-5 rounded-2xl border border-[#0d423e] border-l-4 border-slate-400">
-                <p class="text-[10px] font-bold text-slate-400 mb-1 uppercase">Total Atendimentos (Semestre)</p>
-                <h3 class="text-2xl font-bold text-white" id="kpiAtdSemestral">-</h3>
-            </div>
-            <div class="bg-[#062B28] p-5 rounded-2xl border border-[#0d423e] border-l-4 border-[#80EF63]">
-                <p class="text-[10px] font-bold text-[#80EF63] mb-1 uppercase">Total Ouvidorias (Semestre)</p>
-                <h3 class="text-2xl font-bold text-white" id="kpiTotalSemestral">-</h3>
-            </div>
-            <div class="bg-[#062B28] p-5 rounded-2xl border border-[#0d423e] border-l-4 border-[#80EF63]">
-                <p class="text-[10px] font-bold text-[#80EF63] mb-1 uppercase">Taxa Média no Semestre</p>
-                <h3 class="text-2xl font-bold text-[#80EF63]" id="kpiTaxaSemestral">-</h3>
-            </div>
-        </section>
+  </div>
+</div>
 
-        <div class="grid grid-cols-1 gap-6 mb-6">
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-4">Evolução: Taxa de Ouvidoria x Volume Absoluto (Mês a Mês)</h3>
-                <div class="chart-container-large"><canvas id="chartEvolucaoTaxa"></canvas></div>
-            </div>
-        </div>
+<script>
+Chart.register(ChartDataLabels);
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+Chart.defaults.color = '#898781';
+Chart.defaults.set('plugins.datalabels', {
+    display: (c) => c.dataset.data[c.dataIndex] > 0 && c.dataset.type !== 'line',
+    color: '#1a7a44', font: { weight: 'bold', size: 10 },
+    formatter: (val) => val.toLocaleString('pt-BR')
+});
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-4">Evolução de Níveis (Mês a Mês)</h3>
-                <div class="chart-container"><canvas id="chartEvolucaoNiveis"></canvas></div>
-            </div>
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-4">Evolução por Classificação (Mês a Mês)</h3>
-                <div class="chart-container"><canvas id="chartClassificacaoSemestral"></canvas></div>
-            </div>
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-4">Casos Reclame Aqui (Mês a Mês)</h3>
-                <div class="chart-container"><canvas id="chartEvolucaoRA"></canvas></div>
-            </div>
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-4">Top 5 Subcategorias (Separadas Mês a Mês)</h3>
-                <div class="chart-container"><canvas id="chartTopSubcatsSemestral"></canvas></div>
-            </div>
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-4">Planos mais Acionados (Separados Mês a Mês)</h3>
-                <div class="chart-container"><canvas id="chartPlanosSemestral"></canvas></div>
-            </div>
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-4">Top Subcategoria Acionada por Nível (Mês a Mês)</h3>
-                <div class="chart-container"><canvas id="chartCategoriaNivelSemestral"></canvas></div>
-            </div>
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e]">
-                <h3 class="text-sm font-bold text-white mb-1">Evolução: Top Planos x Subcategorias (Mês a Mês)</h3>
-                <div class="chart-container"><canvas id="chartPlanoSubcatSemestral"></canvas></div>
-            </div>
-            <div class="bg-[#062B28] p-6 rounded-2xl border border-[#0d423e] lg:col-span-2">
-                <h3 class="text-sm font-bold text-white mb-4">Evolução dos Top 5 Grupos (Mês a Mês)</h3>
-                <div class="chart-container"><canvas id="chartGruposSemestral"></canvas></div>
-            </div>
-        </div>
-    </div>
+let rawOuvidorias = null;
+let rawAtendimentos = {};
+let listaMeses = [];
+let chartInstances = {};
+let currentTab = 0;
 
-    <script>
-        Chart.register(ChartDataLabels);
-        Chart.defaults.color = '#94a3b8';
-        Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.05)';
-        Chart.defaults.set('plugins.datalabels', {
-            display: (c) => c.dataset.data[c.dataIndex] > 0,
-            color: '#ffffff',
-            font: { weight: 'bold', size: 10 },
-            formatter: (val) => typeof val === 'number' ? val.toLocaleString('pt-BR') : val
-        });
+const palette = ['#2ebd6b', '#1a7a44', '#f5a623', '#d03b3b', '#9b59b6', '#3498db'];
 
-        let rawOuvidorias = [];
-        let rawAtendimentos = {};
-        let listaMeses = [];
-        let chartInstances = {};
+function setTab(i) {
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',i===j));
+  document.querySelectorAll('.page').forEach((p,j)=>p.classList.toggle('active',i===j));
+  currentTab = i;
+  if(rawOuvidorias) renderTabs();
+}
 
-        const palette = ['#80EF63', '#38bdf8', '#fb923c', '#f43f5e', '#a855f7', '#34d399', '#fbbf24', '#f472b6', '#22d3ee'];
+async function exportCard(cardId, filename) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  card.classList.add('exporting');
+  await new Promise(r => setTimeout(r, 60));
+  try {
+    const canvas = await html2canvas(card, { backgroundColor: '#ffffff', scale: 2 });
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = (filename || cardId) + '.png';
+    a.click();
+  } finally {
+    card.classList.remove('exporting');
+  }
+}
 
-        function findValue(row, possibleKeys) {
-            for (let k of Object.keys(row)) {
-                let cleanK = k.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                for (let p of possibleKeys) {
-                    if (cleanK === p.toLowerCase() || cleanK.includes(p.toLowerCase())) return row[k];
-                }
-            }
-            return '';
+function findValue(row, possibleKeys) {
+    for (let k of Object.keys(row)) {
+        let cleanK = k.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        for (let p of possibleKeys) {
+            if (cleanK.includes(p.toLowerCase())) return row[k];
         }
+    }
+    return '';
+}
 
-        function extractMonth(dateStr) {
-            if (!dateStr) return null;
-            let clean = String(dateStr).trim().replace(/-/g, '/');
-            let parts = clean.split('/');
-            if (parts.length === 3) {
-                let p0 = parseInt(parts[0], 10);
-                let p1 = parseInt(parts[1], 10);
-                let p2 = parseInt(parts[2], 10);
-                if (p0 > 1000) return `${String(p1).padStart(2, '0')}/${p0}`;
-                if (p2 < 100) p2 = 2000 + p2;
-                if (p1 >= 1 && p1 <= 12) return `${String(p1).padStart(2, '0')}/${p2}`;
-            }
-            return null;
-        }
+function extractMonth(dateStr) {
+    if (!dateStr) return null;
+    let clean = String(dateStr).trim().replace(/-/g, '/');
+    let parts = clean.split('/');
+    if (parts.length === 3) {
+        let p0 = parseInt(parts[0], 10);
+        let p1 = parseInt(parts[1], 10);
+        let p2 = parseInt(parts[2], 10);
+        if (p0 > 1000) return `${String(p1).padStart(2, '0')}/${p0}`;
+        if (p2 < 100) p2 = 2000 + p2;
+        if (p1 >= 1 && p1 <= 12) return `${String(p1).padStart(2, '0')}/${p2}`;
+    }
+    return null;
+}
 
-        function parseDate(dateStr) {
-            if (!dateStr) return null;
-            let parts = String(dateStr).trim().replace(/-/g, '/').split('/');
-            if (parts.length === 3) {
-                let p0 = parseInt(parts[0], 10);
-                let p1 = parseInt(parts[1], 10);
-                let p2 = parseInt(parts[2], 10);
-                if (p2 < 100) p2 = 2000 + p2;
-                return new Date(p2, p1 - 1, p0);
-            }
-            return null;
-        }
+function parseDate(dateStr) {
+    if (!dateStr) return null;
+    let parts = String(dateStr).trim().replace(/-/g, '/').split('/');
+    if (parts.length === 3) {
+        let p0 = parseInt(parts[0], 10);
+        let p1 = parseInt(parts[1], 10);
+        let p2 = parseInt(parts[2], 10);
+        if (p2 < 100) p2 = 2000 + p2;
+        return new Date(p2, p1 - 1, p0);
+    }
+    return null;
+}
 
-        function loadCSV(url) {
-            return new Promise((resolve) => {
-                Papa.parse(url, {
-                    download: true,
-                    header: true,
-                    skipEmptyLines: 'greedy',
-                    complete: (res) => resolve(res.data || []),
-                    error: () => resolve([])
-                });
-            });
-        }
-
-        function switchTab(tab) {
-            document.getElementById('viewMensal').classList.toggle('hidden', tab !== 'mensal');
-            document.getElementById('viewSemestral').classList.toggle('hidden', tab !== 'semestral');
-            document.getElementById('tabMensal').className = tab === 'mensal' ? 'pb-3 px-2 tab-active' : 'pb-3 px-2 tab-inactive';
-            document.getElementById('tabSemestral').className = tab === 'semestral' ? 'pb-3 px-2 tab-active' : 'pb-3 px-2 tab-inactive';
-            if (tab === 'semestral') renderSemestral();
-        }
-
-        async function init() {
-            rawOuvidorias = await loadCSV('./ouvidorias.csv');
-            const atd = await loadCSV('./atendimentos.csv');
-
-            atd.forEach(r => {
-                let d = findValue(r, ['data']);
-                let m = extractMonth(d);
-                let rawVal = String(findValue(r, ['atendimento', 'diario', 'total']) || '0').replace(/\./g, '').replace(',', '.');
-                let v = parseFloat(rawVal) || 0;
+function loadCSV(type, input) {
+    const file = input.files[0]; if (!file) return;
+    Papa.parse(file, { header:true, skipEmptyLines:true, complete(res) {
+        if (type === 'ouvidorias') {
+            rawOuvidorias = res.data;
+            document.getElementById('status-ouv').textContent = '✅ Ouvidorias lidas';
+            document.getElementById('status-ouv').className = 'status-ok';
+        } else {
+            let atdData = res.data;
+            rawAtendimentos = {};
+            atdData.forEach(r => {
+                let m = extractMonth(findValue(r, ['data']));
+                let v = parseFloat(String(findValue(r, ['atendimento', 'diario', 'total']) || '0').replace(/\./g, '').replace(',', '.')) || 0;
                 if (m) rawAtendimentos[m] = (rawAtendimentos[m] || 0) + v;
             });
+            document.getElementById('status-atd').textContent = '✅ Atend. lidos';
+            document.getElementById('status-atd').className = 'status-ok';
+        }
+        if(rawOuvidorias) buildMonths();
+    }});
+}
 
-            const select = document.getElementById('monthSelector');
-            select.innerHTML = '';
+function buildMonths() {
+    const select = document.getElementById('monthSelector');
+    const mesesSet = new Set();
+    rawOuvidorias.forEach(r => {
+        let m = extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data']));
+        if (m) mesesSet.add(m);
+    });
+    listaMeses = Array.from(mesesSet).sort((a,b) => {
+        let [mA, yA] = a.split('/').map(Number);
+        let [mB, yB] = b.split('/').map(Number);
+        return (yA * 12 + mA) - (yB * 12 + mB);
+    });
+    if (listaMeses.length > 0) {
+        select.innerHTML = '';
+        listaMeses.forEach(m => select.add(new Option(m, m)));
+        select.value = listaMeses[listaMeses.length - 1];
+        renderTabs();
+    }
+}
 
-            const mesesSet = new Set();
-            rawOuvidorias.forEach(r => {
-                let m = extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data']));
-                if (m) mesesSet.add(m);
-            });
+function destroyChart(id) {
+    if (chartInstances[id]) chartInstances[id].destroy();
+}
 
-            listaMeses = Array.from(mesesSet).sort((a,b) => {
-                let [mA, yA] = a.split('/').map(Number);
-                let [mB, yB] = b.split('/').map(Number);
-                return (yA * 12 + mA) - (yB * 12 + mB);
-            });
+function renderTabs() {
+    if (currentTab === 0) renderMensal();
+    else renderSemestral();
+}
 
-            if (listaMeses.length === 0) {
-                document.getElementById('statusSyncText').innerText = '⚠️ Erro na leitura de datas';
-                return;
-            }
+function renderMensal() {
+    const m = document.getElementById('monthSelector').value;
+    if (!m || !rawOuvidorias) return;
 
-            listaMeses.forEach(m => select.add(new Option(m, m)));
-            select.value = listaMeses[listaMeses.length - 1];
-            document.getElementById('statusSyncText').innerText = '✅ Sincronizado';
+    const dados = rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m);
+    const totalOuv = dados.length;
+    const totalAtd = rawAtendimentos[m] || 0;
 
-            renderMensal();
+    let totalDias = 0, concluidos = 0;
+    const grupos = {}, niveis = {}, classif = {}, subcats = {}, raPorDia = {};
+
+    dados.forEach(r => {
+        let dA = parseDate(findValue(r, ['data da ouvidoria', 'data de abertura', 'data']));
+        let dC = parseDate(findValue(r, ['data de conclusao', 'data conclusao', 'resolução']));
+        if (dA && dC && dC >= dA) { totalDias += Math.ceil(Math.abs(dC - dA) / (1000 * 60 * 60 * 24)); concluidos++; }
+
+        let dStr = findValue(r, ['data da ouvidoria', 'data de abertura', 'data']);
+        if (dStr) {
+            let dia = String(dStr).split('/')[0];
+            let isRA = String(findValue(r, ['reclame aqui', 'ra'])).toLowerCase() === 'true';
+            if (isRA) raPorDia[dia] = (raPorDia[dia] || 0) + 1;
         }
 
-        function destroyChart(id) {
-            if (chartInstances[id]) chartInstances[id].destroy();
-        }
+        let g = findValue(r, ['grupo']) || 'Não Informado';
+        let n = findValue(r, ['nivel', 'nível']) || 'Sem Nível';
+        let c = findValue(r, ['classificacao', 'classificação']) || 'Outros';
+        let sub = findValue(r, ['sub categoria', 'subcategoria']) || 'Outros';
 
-        function renderMensal() {
-            const m = document.getElementById('monthSelector').value;
-            if (!m) return;
+        if (g.trim()) grupos[g] = (grupos[g] || 0) + 1;
+        if (n.trim()) niveis[n] = (niveis[n] || 0) + 1;
+        if (c.trim()) classif[c] = (classif[c] || 0) + 1;
+        if (sub.trim()) subcats[sub] = (subcats[sub] || 0) + 1;
+    });
 
-            const dados = rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m);
-            const totalOuv = dados.length;
-            const totalAtd = rawAtendimentos[m] || 0;
+    document.getElementById('kpiTotalMensal').innerText = totalOuv.toLocaleString('pt-BR');
+    document.getElementById('kpiAtdMensal').innerText = totalAtd > 0 ? totalAtd.toLocaleString('pt-BR') : '-';
+    document.getElementById('kpiTaxaMensal').innerText = totalAtd > 0 ? ((totalOuv / totalAtd) * 100).toFixed(2).replace('.', ',') + '%' : '0,00%';
+    document.getElementById('kpiTMRMensal').innerText = concluidos > 0 ? (totalDias / concluidos).toFixed(1).replace('.', ',') : '-';
 
-            let totalDias = 0; let concluidos = 0;
-            const grupos = {}; const niveis = {}; const classif = {}; const subcats = {}; const planos = {}; 
-            const raPorDia = {}; const catNivel = {}; const planoSubcat = {};
+    let diasSorted = Object.keys(raPorDia).sort((a,b) => parseInt(a)-parseInt(b));
+    destroyChart('chartRAMensalLinha');
+    chartInstances['chartRAMensalLinha'] = new Chart(document.getElementById('chartRAMensalLinha'), {
+        type: 'line', data: { labels: diasSorted.map(d=>`${d}/${m.split('/')[0]}`), datasets: [{ label: 'Reclame Aqui', data: diasSorted.map(d=>raPorDia[d]), borderColor: '#d03b3b', backgroundColor: 'rgba(208, 59, 59, 0.1)', fill: true, tension: 0.3 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } } }
+    });
 
-            dados.forEach(r => {
-                let dA = parseDate(findValue(r, ['data da ouvidoria', 'data de abertura', 'data']));
-                let dC = parseDate(findValue(r, ['data de conclusao', 'data conclusao', 'resolução']));
-                if (dA && dC && dC >= dA) {
-                    totalDias += Math.ceil(Math.abs(dC - dA) / (1000 * 60 * 60 * 24));
-                    concluidos++;
-                }
+    destroyChart('chartNiveisMensal');
+    chartInstances['chartNiveisMensal'] = new Chart(document.getElementById('chartNiveisMensal'), {
+        type: 'doughnut', data: { labels: Object.keys(niveis), datasets: [{ data: Object.values(niveis), backgroundColor: palette }] },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
 
-                let dStr = findValue(r, ['data da ouvidoria', 'data de abertura', 'data']);
-                if (dStr) {
-                    let dia = String(dStr).split('/')[0];
-                    let isRA = String(findValue(r, ['reclame aqui', 'ra'])).toUpperCase() === 'TRUE';
-                    if (isRA) raPorDia[dia] = (raPorDia[dia] || 0) + 1;
-                }
+    destroyChart('chartClassificacaoMensal');
+    chartInstances['chartClassificacaoMensal'] = new Chart(document.getElementById('chartClassificacaoMensal'), {
+        type: 'doughnut', data: { labels: Object.keys(classif), datasets: [{ data: Object.values(classif), backgroundColor: palette.slice().reverse() }] },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
 
-                let g = findValue(r, ['grupo']) || 'Não Informado';
-                let n = findValue(r, ['nivel', 'nível']) || 'Sem Nível';
-                let c = findValue(r, ['classificacao', 'classificação']) || 'Outros';
-                let sub = findValue(r, ['sub categoria', 'subcategoria']) || 'Outros';
-                let pl = findValue(r, ['plano']) || 'Não Informado';
+    let topSub = Object.entries(subcats).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    destroyChart('chartTopSubcatsMensal');
+    chartInstances['chartTopSubcatsMensal'] = new Chart(document.getElementById('chartTopSubcatsMensal'), {
+        type: 'bar', data: { labels: topSub.map(s=>s[0]), datasets: [{ label: 'Volume', data: topSub.map(s=>s[1]), backgroundColor: '#2ebd6b', borderRadius: 4 }] },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+    });
 
-                if (g.trim()) grupos[g] = (grupos[g] || 0) + 1;
-                if (n.trim()) niveis[n] = (niveis[n] || 0) + 1;
-                if (c.trim()) classif[c] = (classif[c] || 0) + 1;
-                if (sub.trim()) subcats[sub] = (subcats[sub] || 0) + 1;
-                if (pl.trim()) planos[pl] = (planos[pl] || 0) + 1;
+    let topGp = Object.entries(grupos).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    destroyChart('chartGruposMensal');
+    chartInstances['chartGruposMensal'] = new Chart(document.getElementById('chartGruposMensal'), {
+        type: 'bar', data: { labels: topGp.map(g=>g[0]), datasets: [{ label: 'Volume', data: topGp.map(g=>g[1]), backgroundColor: '#1a7a44', borderRadius: 4 }] },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+}
 
-                if (n.trim() && sub.trim()) {
-                    if (!catNivel[n]) catNivel[n] = {};
-                    catNivel[n][sub] = (catNivel[n][sub] || 0) + 1;
-                }
-                if (pl.trim() && sub.trim()) {
-                    if (!planoSubcat[pl]) planoSubcat[pl] = {};
-                    planoSubcat[pl][sub] = (planoSubcat[pl][sub] || 0) + 1;
-                }
-            });
+function renderSemestral() {
+    if (!rawOuvidorias) return;
+    let indexAtual = listaMeses.indexOf(document.getElementById('monthSelector').value);
+    if(indexAtual === -1) indexAtual = listaMeses.length - 1;
+    let meses6 = listaMeses.slice(Math.max(0, indexAtual - 5), indexAtual + 1);
+    
+    let totOuv = 0, totAtd = 0;
+    let volOuvMes = [], volAtdMes = [], taxaMes = [];
 
-            document.getElementById('kpiTotalMensal').innerText = totalOuv.toLocaleString('pt-BR');
-            document.getElementById('kpiAtdMensal').innerText = totalAtd > 0 ? totalAtd.toLocaleString('pt-BR') : '-';
-            document.getElementById('kpiTaxaMensal').innerText = totalAtd > 0 ? ((totalOuv / totalAtd) * 100).toFixed(2).replace('.', ',') + '%' : '0,00%';
-            document.getElementById('kpiTMRMensal').innerText = concluidos > 0 ? (totalDias / concluidos).toFixed(1).replace('.', ',') : '-';
+    meses6.forEach(m => {
+        let subData = rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m);
+        let ouvCnt = subData.length;
+        let atdCnt = rawAtendimentos[m] || 0;
+        totOuv += ouvCnt; totAtd += atdCnt;
+        volOuvMes.push(ouvCnt); volAtdMes.push(atdCnt);
+        taxaMes.push(atdCnt > 0 ? ((ouvCnt/atdCnt)*100).toFixed(2) : 0);
+    });
 
-            // 1. Reclame Aqui
-            let diasSorted = Object.keys(raPorDia).sort((a,b) => parseInt(a)-parseInt(b));
-            destroyChart('chartRAMensalLinha');
-            chartInstances['chartRAMensalLinha'] = new Chart(document.getElementById('chartRAMensalLinha'), {
-                type: 'line', data: { labels: diasSorted.map(d=>`${d}/${m.split('/')[0]}`), datasets: [{ label: 'Reclame Aqui', data: diasSorted.map(d=>raPorDia[d]), borderColor: '#f43f5e', backgroundColor: 'rgba(244,63,94,0.15)', fill: true }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+    document.getElementById('kpiTotalSemestral').innerText = totOuv.toLocaleString('pt-BR');
+    document.getElementById('kpiAtdSemestral').innerText = totAtd > 0 ? totAtd.toLocaleString('pt-BR') : '-';
+    document.getElementById('kpiTaxaSemestral').innerText = totAtd > 0 ? ((totOuv/totAtd)*100).toFixed(2).replace('.', ',') + '%' : '0,00%';
 
-            // 2. Níveis
-            destroyChart('chartNiveisMensal');
-            chartInstances['chartNiveisMensal'] = new Chart(document.getElementById('chartNiveisMensal'), {
-                type: 'doughnut', data: { labels: Object.keys(niveis), datasets: [{ data: Object.values(niveis), backgroundColor: palette }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // 3. Classificação
-            destroyChart('chartClassificacaoMensal');
-            chartInstances['chartClassificacaoMensal'] = new Chart(document.getElementById('chartClassificacaoMensal'), {
-                type: 'doughnut', data: { labels: Object.keys(classif), datasets: [{ data: Object.values(classif), backgroundColor: palette.slice().reverse() }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // 4. Top 5 Subcategorias
-            let topSub = Object.entries(subcats).sort((a,b)=>b[1]-a[1]).slice(0,5);
-            destroyChart('chartTopSubcatsMensal');
-            chartInstances['chartTopSubcatsMensal'] = new Chart(document.getElementById('chartTopSubcatsMensal'), {
-                type: 'bar', data: { labels: topSub.map(s=>s[0]), datasets: [{ label: 'Volume', data: topSub.map(s=>s[1]), backgroundColor: '#80EF63' }] },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
-            });
-
-            // 5. Top Subcategoria por Nível
-            let topCatNivel = Object.keys(catNivel).map(n => {
-                let cats = catNivel[n];
-                let top = Object.keys(cats).reduce((a,b) => cats[a] > cats[b] ? a : b);
-                return { label: `[${n}] ${top}`, val: cats[top] };
-            });
-            destroyChart('chartCategoriaNivelMensal');
-            chartInstances['chartCategoriaNivelMensal'] = new Chart(document.getElementById('chartCategoriaNivelMensal'), {
-                type: 'bar',
-                data: {
-                    labels: topCatNivel.map(x=>x.label),
-                    datasets: [{ label: 'Volume', data: topCatNivel.map(x=>x.val), backgroundColor: '#38bdf8' }]
-                },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
-            });
-
-            // 6. Planos
-            let topPl = Object.entries(planos).sort((a,b)=>b[1]-a[1]).slice(0,5);
-            destroyChart('chartPlanosMensal');
-            chartInstances['chartPlanosMensal'] = new Chart(document.getElementById('chartPlanosMensal'), {
-                type: 'bar', data: { labels: topPl.map(p=>p[0]), datasets: [{ label: 'Volume', data: topPl.map(p=>p[1]), backgroundColor: '#38bdf8' }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // 7. Top Planos x Subcategorias
-            let topPlanosList = topPl.map(p=>p[0]);
-            let topSubList = topSub.map(s=>s[0]);
-            let datasetsPlanoSub = topSubList.map((sub, idx) => ({
-                label: sub,
-                data: topPlanosList.map(plano => (planoSubcat[plano] && planoSubcat[plano][sub]) || 0),
-                backgroundColor: palette[idx % palette.length]
-            }));
-            destroyChart('chartPlanoSubcatMensal');
-            chartInstances['chartPlanoSubcatMensal'] = new Chart(document.getElementById('chartPlanoSubcatMensal'), {
-                type: 'bar',
-                data: { labels: topPlanosList, datasets: datasetsPlanoSub },
-                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
-            });
-
-            // 8. Grupos
-            let topGp = Object.entries(grupos).sort((a,b)=>b[1]-a[1]).slice(0,10);
-            destroyChart('chartGruposMensal');
-            chartInstances['chartGruposMensal'] = new Chart(document.getElementById('chartGruposMensal'), {
-                type: 'bar', data: { labels: topGp.map(g=>g[0]), datasets: [{ label: 'Volume', data: topGp.map(g=>g[1]), backgroundColor: '#80EF63' }] },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
-            });
-        }
-
-        function renderSemestral() {
-            let meses6 = listaMeses.slice(-6);
-            let totOuv = 0; let totAtd = 0;
-            let volOuvMes = []; let volAtdMes = []; let taxaMes = [];
-            let raMes = {}; let nivMes = {}; let classifMes = {}; let subcatsMes = {}; let planosMes = {}; let gruposMes = {};
-
-            meses6.forEach(m => {
-                let subData = rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m);
-                let ouvCnt = subData.length;
-                let atdCnt = rawAtendimentos[m] || 0;
-                totOuv += ouvCnt; totAtd += atdCnt;
-                volOuvMes.push(ouvCnt); volAtdMes.push(atdCnt);
-                taxaMes.push(atdCnt > 0 ? ((ouvCnt/atdCnt)*100).toFixed(2) : 0);
-
-                subData.forEach(r => {
-                    let isRA = String(findValue(r, ['reclame aqui', 'ra'])).toUpperCase() === 'TRUE';
-                    if (isRA) raMes[m] = (raMes[m] || 0) + 1;
-
-                    let n = findValue(r, ['nivel', 'nível']) || 'Sem Nível';
-                    let c = findValue(r, ['classificacao', 'classificação']) || 'Outros';
-                    let sub = findValue(r, ['sub categoria', 'subcategoria']) || 'Outros';
-                    let pl = findValue(r, ['plano']) || 'Não Informado';
-                    let g = findValue(r, ['grupo']) || 'Não Informado';
-
-                    if (!nivMes[n]) nivMes[n] = {}; nivMes[n][m] = (nivMes[n][m] || 0) + 1;
-                    if (!classifMes[c]) classifMes[c] = {}; classifMes[c][m] = (classifMes[c][m] || 0) + 1;
-                    if (!subcatsMes[sub]) subcatsMes[sub] = 0; subcatsMes[sub]++;
-                    if (!planosMes[pl]) planosMes[pl] = 0; planosMes[pl]++;
-                    if (!gruposMes[g]) gruposMes[g] = 0; gruposMes[g]++;
-                });
-            });
-
-            document.getElementById('kpiTotalSemestral').innerText = totOuv.toLocaleString('pt-BR');
-            document.getElementById('kpiAtdSemestral').innerText = totAtd > 0 ? totAtd.toLocaleString('pt-BR') : '-';
-            document.getElementById('kpiTaxaSemestral').innerText = totAtd > 0 ? ((totOuv/totAtd)*100).toFixed(2).replace('.', ',') + '%' : '0,00%';
-
-            // 1. Taxa Evolução
-            destroyChart('chartEvolucaoTaxa');
-            chartInstances['chartEvolucaoTaxa'] = new Chart(document.getElementById('chartEvolucaoTaxa'), {
-                type: 'bar',
-                data: {
-                    labels: meses6,
-                    datasets: [
-                        { label: 'Taxa (%)', data: taxaMes, type: 'line', borderColor: '#80EF63', backgroundColor: '#80EF63', yAxisID: 'y' },
-                        { label: 'Ouvidorias', data: volOuvMes, backgroundColor: '#0e524b', yAxisID: 'y1' }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // 2. Evolução Níveis
-            let datasetsNiveis = Object.keys(nivMes).map((n, idx) => ({
-                label: n, data: meses6.map(m => (nivMes[n] && nivMes[n][m]) || 0), backgroundColor: palette[idx % palette.length]
-            }));
-            destroyChart('chartEvolucaoNiveis');
-            chartInstances['chartEvolucaoNiveis'] = new Chart(document.getElementById('chartEvolucaoNiveis'), {
-                type: 'bar', data: { labels: meses6, datasets: datasetsNiveis },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // 3. Classificação Semestral
-            let datasetsClassif = Object.keys(classifMes).map((c, idx) => ({
-                label: c, data: meses6.map(m => (classifMes[c] && classifMes[c][m]) || 0), backgroundColor: palette[idx % palette.length]
-            }));
-            destroyChart('chartClassificacaoSemestral');
-            chartInstances['chartClassificacaoSemestral'] = new Chart(document.getElementById('chartClassificacaoSemestral'), {
-                type: 'bar', data: { labels: meses6, datasets: datasetsClassif },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // 4. RA Mês a Mês
-            destroyChart('chartEvolucaoRA');
-            chartInstances['chartEvolucaoRA'] = new Chart(document.getElementById('chartEvolucaoRA'), {
-                type: 'line', data: { labels: meses6, datasets: [{ label: 'Reclame Aqui', data: meses6.map(m => raMes[m] || 0), borderColor: '#f43f5e', backgroundColor: 'rgba(244,63,94,0.15)', fill: true }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // 5. Top 5 Subcategorias Mês a Mês
-            let top5SubSem = Object.entries(subcatsMes).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]);
-            let datasetsSubSem = top5SubSem.map((sub, idx) => ({
-                label: sub, data: meses6.map(m => rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m && findValue(r, ['sub categoria', 'subcategoria']) === sub).length), backgroundColor: palette[idx % palette.length]
-            }));
-            destroyChart('chartTopSubcatsSemestral');
-            chartInstances['chartTopSubcatsSemestral'] = new Chart(document.getElementById('chartTopSubcatsSemestral'), {
-                type: 'bar', data: { labels: meses6, datasets: datasetsSubSem },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // 6. Planos Mês a Mês
-            let top5PlSem = Object.entries(planosMes).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]);
-            let datasetsPlSem = top5PlSem.map((pl, idx) => ({
-                label: pl, data: meses6.map(m => rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m && findValue(r, ['plano']) === pl).length), backgroundColor: palette[idx % palette.length]
-            }));
-            destroyChart('chartPlanosSemestral');
-            chartInstances['chartPlanosSemestral'] = new Chart(document.getElementById('chartPlanosSemestral'), {
-                type: 'bar', data: { labels: meses6, datasets: datasetsPlSem },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // 7. Top Subcategoria por Nível Mês a Mês
-            destroyChart('chartCategoriaNivelSemestral');
-            chartInstances['chartCategoriaNivelSemestral'] = new Chart(document.getElementById('chartCategoriaNivelSemestral'), {
-                type: 'bar', data: { labels: meses6, datasets: datasetsNiveis },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // 8. Top Planos x Subcategorias Mês a Mês
-            destroyChart('chartPlanoSubcatSemestral');
-            chartInstances['chartPlanoSubcatSemestral'] = new Chart(document.getElementById('chartPlanoSubcatSemestral'), {
-                type: 'bar', data: { labels: meses6, datasets: datasetsPlSem },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // 9. Top 5 Grupos Mês a Mês
-            let top5GpSem = Object.entries(gruposMes).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]);
-            let datasetsGpSem = top5GpSem.map((gp, idx) => ({
-                label: gp, data: meses6.map(m => rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m && findValue(r, ['grupo']) === gp).length), backgroundColor: palette[idx % palette.length]
-            }));
-            destroyChart('chartGruposSemestral');
-            chartInstances['chartGruposSemestral'] = new Chart(document.getElementById('chartGruposSemestral'), {
-                type: 'bar', data: { labels: meses6, datasets: datasetsGpSem },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
-
-        function baixarDashboard() {
-            html2canvas(document.body).then(canvas => {
-                let a = document.createElement('a');
-                a.href = canvas.toDataURL('image/png');
-                a.download = 'dashboard_ouvidoria.png';
-                a.click();
-            });
-        }
-
-        window.onload = init;
-    </script>
+    destroyChart('chartEvolucaoTaxa');
+    chartInstances['chartEvolucaoTaxa'] = new Chart(document.getElementById('chartEvolucaoTaxa'), {
+        type: 'bar',
+        data: { labels: meses6, datasets: [
+            { label: 'Taxa (%)', data: taxaMes, type: 'line', borderColor: '#f5a623', backgroundColor: 'transparent', yAxisID: 'y1', tension: 0.3, borderWidth: 3 },
+            { label: 'Ouvidorias', data: volOuvMes, backgroundColor: '#2ebd6b', borderRadius: 4, yAxisID: 'y' }
+        ]},
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { grid: { color: '#e8f9ef' } }, y1: { position: 'right', grid: { display: false } } }, plugins: { datalabels: { display: false } } }
+    });
+}
+</script>
 </body>
 </html>
