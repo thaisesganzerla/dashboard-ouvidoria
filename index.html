@@ -240,38 +240,72 @@ function parseDate(dateStr) {
 
 function loadCSV(type, input) {
     const file = input.files[0]; if (!file) return;
-    Papa.parse(file, { header:true, skipEmptyLines:true, complete(res) {
-        if (type === 'ouvidorias') {
-            rawOuvidorias = res.data;
-            document.getElementById('status-ouv').textContent = '✅ Ouvidorias lidas';
-            document.getElementById('status-ouv').className = 'status-ok';
-        } else {
-            let atdData = res.data;
-            rawAtendimentos = {};
-            atdData.forEach(r => {
-                let m = extractMonth(findValue(r, ['data']));
-                let v = parseFloat(String(findValue(r, ['atendimento', 'diario', 'total']) || '0').replace(/\./g, '').replace(',', '.')) || 0;
-                if (m) rawAtendimentos[m] = (rawAtendimentos[m] || 0) + v;
-            });
-            document.getElementById('status-atd').textContent = '✅ Atend. lidos';
-            document.getElementById('status-atd').className = 'status-ok';
-        }
-        if(rawOuvidorias) buildMonths();
-    }});
+    
+    // Leitura inteligente para detectar ponto e vírgula vs vírgula
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n');
+        const firstLine = lines[0] || '';
+        const delimiter = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
+        
+        Papa.parse(file, { 
+            header: true, 
+            skipEmptyLines: true, 
+            delimiter: delimiter,
+            complete(res) {
+                const cols = res.meta.fields || [];
+                
+                if (type === 'ouvidorias') {
+                    // Validação para ajudar a identificar o erro
+                    let temData = cols.some(c => c.toLowerCase().includes('data'));
+                    if (!temData) {
+                        alert("⚠️ Ops! Não achei a coluna de 'Data' nas Ouvidorias.\n\nColunas que eu encontrei:\n" + cols.join(" | "));
+                    }
+                    rawOuvidorias = res.data;
+                    document.getElementById('status-ouv').textContent = '✅ Ouvidorias lidas';
+                    document.getElementById('status-ouv').className = 'status-ok';
+                } else {
+                    let atdData = res.data;
+                    rawAtendimentos = {};
+                    atdData.forEach(r => {
+                        let m = extractMonth(findValue(r, ['data']));
+                        let v = parseFloat(String(findValue(r, ['atendimento', 'diario', 'total']) || '0').replace(/\./g, '').replace(',', '.')) || 0;
+                        if (m) rawAtendimentos[m] = (rawAtendimentos[m] || 0) + v;
+                    });
+                    document.getElementById('status-atd').textContent = '✅ Atend. lidos';
+                    document.getElementById('status-atd').className = 'status-ok';
+                }
+                if(rawOuvidorias) buildMonths();
+            }
+        });
+    };
+    reader.readAsText(file);
 }
 
 function buildMonths() {
     const select = document.getElementById('monthSelector');
     const mesesSet = new Set();
+    let datasEncontradas = 0;
+    
     rawOuvidorias.forEach(r => {
         let m = extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data']));
-        if (m) mesesSet.add(m);
+        if (m) {
+            mesesSet.add(m);
+            datasEncontradas++;
+        }
     });
+    
+    if (datasEncontradas === 0) {
+        alert("⚠️ As planilhas foram lidas, mas o código não conseguiu formatar nenhuma data. As datas estão no formato DD/MM/AAAA?");
+    }
+
     listaMeses = Array.from(mesesSet).sort((a,b) => {
         let [mA, yA] = a.split('/').map(Number);
         let [mB, yB] = b.split('/').map(Number);
         return (yA * 12 + mA) - (yB * 12 + mB);
     });
+    
     if (listaMeses.length > 0) {
         select.innerHTML = '';
         listaMeses.forEach(m => select.add(new Option(m, m)));
@@ -395,5 +429,3 @@ function renderSemestral() {
     });
 }
 </script>
-</body>
-</html>
