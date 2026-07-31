@@ -207,11 +207,33 @@ Chart.defaults.color = '#898781';
 Chart.defaults.set('plugins.datalabels', { 
     display: function(ctx) { 
         let val = ctx.dataset.data[ctx.dataIndex];
-        // Mostra TUDO que for maior que zero (removi a trava que apagava os menores)
-        return val && val > 0;
+        if (!val || val === 0) return false;
+        
+        // Regra para gráficos de rosca
+        if (ctx.chart.config.type === 'doughnut') {
+            let total = ctx.dataset.data.reduce((a,b)=>a+b, 0);
+            return (val / total) >= 0.06; // Oculta se for menor que 6% do círculo
+        }
+
+        // Regra Inteligente para gráficos empilhados (Stacked)
+        let scales = ctx.chart.config.options.scales;
+        if (scales && (scales.x?.stacked || scales.y?.stacked)) {
+            let total = 0;
+            // Descobre o tamanho total da barra somando todas as fatias
+            ctx.chart.data.datasets.forEach(ds => {
+                let v = ds.data[ctx.dataIndex];
+                if (typeof v === 'number' && !isNaN(v)) total += v;
+            });
+            // Oculta se o valor representar menos de 7% do tamanho da barra
+            if (total > 0 && (val / total) < 0.07) {
+                return false;
+            }
+        }
+
+        return true; // Para os demais (linhas ou barras comuns), mostra normalmente
     }, 
     color: '#fff', 
-    font: { weight: 'bold', size: 10 }, // Fonte tamanho 10 para caber melhor
+    font: { weight: 'bold', size: 10 }, 
     anchor: 'center', 
     align: 'center',
     formatter: function(val, ctx) {
@@ -513,7 +535,7 @@ function renderSemestral() {
     document.getElementById('kpiAtdSemestral').innerText = totAtd > 0 ? totAtd.toLocaleString('pt-BR') : '-';
     document.getElementById('kpiTaxaSemestral').innerText = totAtd > 0 ? ((totOuv/totAtd)*100).toFixed(2).replace('.', ',') + '%' : '0,00%';
 
-    // 1. Evolução Taxa x Volume x Atendimentos (Eixos Separados para Ouvidoria e Atendimentos)
+    // 1. Evolução Taxa x Volume x Atendimentos
     destroyChart('chartEvolucaoTaxa');
     chartInstances['chartEvolucaoTaxa'] = new Chart(document.getElementById('chartEvolucaoTaxa'), {
         type: 'bar',
@@ -527,7 +549,7 @@ function renderSemestral() {
             scales: { 
                 y: { type: 'linear', position: 'left', title: { display: true, text: 'Ouvidorias' }, grid: { color: '#e8f9ef' } }, 
                 y1: { type: 'linear', position: 'right', title: { display: true, text: 'Taxa (%)' }, grid: { display: false } },
-                y2: { type: 'linear', display: false } // Eixo oculto específico para não amassar as ouvidorias
+                y2: { type: 'linear', display: false } 
             },
             plugins: { 
                 datalabels: { 
