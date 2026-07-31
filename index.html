@@ -11,19 +11,20 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', system-ui, sans-serif; background: #eef2ee; min-height: 100vh; padding: 16px; }
-  .dash { width: 100%; max-width: 1000px; margin: 0 auto; }
+  .dash { width: 100%; max-width: 960px; margin: 0 auto; }
 
   /* Header */
   .header { background: #022726; border-radius: 14px 14px 0 0; padding: 18px 28px; display: flex; align-items: center; justify-content: space-between; }
   .header-title { color: #fff; }
   .header-title p { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.85; }
   .header-title h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; }
-  
+  .logo { color: #fff; font-size: 30px; font-weight: 800; letter-spacing: -1.5px; }
+  .logo span { color: #ffde59; }
   /* Tabs */
   .tabs-bar { background: #1a7a44; padding: 10px 20px; display: flex; gap: 8px; }
   .tab { flex: 1; padding: 9px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; color: #a8e6c4; background: transparent; border: 1.5px solid rgba(255,255,255,0.2); text-align: center; transition: all 0.15s; }
   .tab.active { background: #fff; color: #1a7a44; border-color: #fff; font-weight: 600; }
-  .tab:hover:not(.active) { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.4); }
+  .tab:hover:not(.active) { background: rgba(255,255,255,0.2); color: #fff; border-color: rgba(255,255,255,0.4); }
 
   /* Upload Bar */
   .upload-bar { background: #fff; border-bottom: 1px solid #e1e0d9; padding: 10px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -78,9 +79,9 @@
     <label class="upload-btn">📂 Base Ouvidorias<input type="file" accept=".csv" onchange="loadCSV('ouvidorias',this)"></label>
     <label class="upload-btn">📂 Base Atendimentos<input type="file" accept=".csv" onchange="loadCSV('atendimentos',this)"></label>
     
-    <span id="status-ouv" class="status-pending">⏳ Ouvidorias pendentes</span>
+    <span id="status-ouv" class="status-pending">⏳ Dados ouvidorias não carregados</span>
     <span style="color:#ccc;">·</span>
-    <span id="status-atd" class="status-pending">⏳ Atendimentos pendentes</span>
+    <span id="status-atd" class="status-pending">⏳ Dados atendimentos não carregados</span>
     
     <div class="filter-area">
       <label>Mês:</label>
