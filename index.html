@@ -561,8 +561,16 @@ function renderSemestral() {
             plugins: { 
                 datalabels: { 
                     display: true,
-                    align: function(ctx) { return ctx.dataset.type === 'line' ? 'top' : 'center'; },
-                    anchor: function(ctx) { return ctx.dataset.type === 'line' ? 'end' : 'center'; },
+                    align: function(ctx) { 
+                        if (ctx.dataset.label === 'Taxa (%)') return 'bottom'; // 👈 Joga a Taxa pra baixo
+                        if (ctx.dataset.type === 'line') return 'top'; // 👈 Mantém Atendimentos pra cima
+                        return 'center'; 
+                    },
+                    anchor: function(ctx) { 
+                        if (ctx.dataset.label === 'Taxa (%)') return 'bottom'; // 👈 Ancora por baixo
+                        if (ctx.dataset.type === 'line') return 'end'; 
+                        return 'center'; 
+                    },
                     color: function(ctx) { return ctx.dataset.type === 'line' ? ctx.dataset.borderColor : '#fff'; },
                     backgroundColor: function(ctx) { return ctx.dataset.type === 'line' ? '#ffffffcc' : 'transparent'; },
                     borderRadius: 4
