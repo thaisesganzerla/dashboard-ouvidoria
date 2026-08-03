@@ -35,12 +35,15 @@
   .filter-area { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: #099655; }
   .filter-area select { padding: 4px 8px; border-radius: 6px; border: 1px solid #c5ecd8; background: #f4fdf7; color: #099655; outline: none; font-weight: 600; }
 
+  /* Filtro de Nível Local nos Cards */
+  .card-level-select { padding: 3px 6px; border-radius: 6px; border: 1px solid #c5ecd8; background: #f4fdf7; color: #099655; outline: none; font-weight: 600; font-size: 11px; }
+
   /* Body */
   .body { background: #f8faf9; padding: 16px; display: flex; flex-direction: column; gap: 16px; border-radius: 0 0 14px 14px; }
   
   .section-title { font-size: 12px; font-weight: 600; color: #fff; background: #00c16e; display: inline-block; padding: 4px 14px; border-radius: 20px; }
   .card { background: #fff; border-radius: 12px; border: 0.5px solid #e1e0d9; padding: 16px; position: relative; }
-  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
   
   .export-btn { display: flex; align-items: center; gap: 5px; background: #f4fdf7; border: 1px solid #c5ecd8; border-radius: 7px; font-size: 11px; font-weight: 500; color: #099655; padding: 5px 11px; cursor: pointer; white-space: nowrap; }
   .export-btn:hover { background: #e8f9ef; }
@@ -86,11 +89,6 @@
       <label>Mês:</label>
       <select id="monthSelector" onchange="renderTabs()">
         <option value="">Aguardando dados...</option>
-      </select>
-
-      <label style="margin-left: 8px;">Nível (Tendências):</label>
-      <select id="levelSelector" onchange="updateLevelCharts()">
-        <option value="ALL">Todos os Níveis</option>
       </select>
     </div>
   </div>
@@ -170,7 +168,15 @@
       
       <div class="charts-row">
         <div class="card" id="card-evolucao-niveis">
-          <div class="card-header"><span class="section-title">Evolução de Níveis</span><button class="export-btn" onclick="exportCard('card-evolucao-niveis')">⬇ Exportar</button></div>
+          <div class="card-header">
+            <span class="section-title">Evolução de Níveis</span>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <select id="levelSelectEvolucaoNiveis" class="card-level-select" onchange="onLevelChange(this.value)">
+                <option value="ALL">Todos os Níveis</option>
+              </select>
+              <button class="export-btn" onclick="exportCard('card-evolucao-niveis')">⬇ Exportar</button>
+            </div>
+          </div>
           <div style="position:relative;height:250px;"><canvas id="chartEvolucaoNiveis"></canvas></div>
         </div>
         <!-- Reclame Aqui (Barras Mensais) -->
@@ -198,7 +204,15 @@
       <!-- Nova linha: Subcategoria por Nível e Evolução de Classificação -->
       <div class="charts-row">
         <div class="card" id="card-sem-sub-nivel">
-          <div class="card-header"><span class="section-title">Top Subcategoria Acionada por Nível (Mês a Mês)</span><button class="export-btn" onclick="exportCard('card-sem-sub-nivel')">⬇ Exportar</button></div>
+          <div class="card-header">
+            <span class="section-title">Top Subcategoria Acionada por Nível (Mês a Mês)</span>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <select id="levelSelectSubNivel" class="card-level-select" onchange="onLevelChange(this.value)">
+                <option value="ALL">Todos os Níveis</option>
+              </select>
+              <button class="export-btn" onclick="exportCard('card-sem-sub-nivel')">⬇ Exportar</button>
+            </div>
+          </div>
           <div style="position:relative;height:260px;"><canvas id="chartSemSubNivel"></canvas></div>
         </div>
         <div class="card" id="card-sem-classificacao">
@@ -209,7 +223,15 @@
 
       <div class="charts-row">
         <div class="card" id="card-sem-tendencia">
-          <div class="card-header"><span class="section-title">Tendência das 3 principais combinações</span><button class="export-btn" onclick="exportCard('card-sem-tendencia')">⬇ Exportar</button></div>
+          <div class="card-header">
+            <span class="section-title">Tendência das 3 principais combinações</span>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <select id="levelSelectTendencia" class="card-level-select" onchange="onLevelChange(this.value)">
+                <option value="ALL">Todos os Níveis</option>
+              </select>
+              <button class="export-btn" onclick="exportCard('card-sem-tendencia')">⬇ Exportar</button>
+            </div>
+          </div>
           <div style="position:relative;height:260px;"><canvas id="chartSemTendencia"></canvas></div>
         </div>
         <div class="card" id="card-sem-plano-sub">
@@ -384,7 +406,11 @@ function buildMonths() {
 }
 
 function buildLevels() {
-    const levelSelect = document.getElementById('levelSelector');
+    const selects = [
+        document.getElementById('levelSelectSubNivel'), 
+        document.getElementById('levelSelectTendencia'),
+        document.getElementById('levelSelectEvolucaoNiveis')
+    ];
     const niveisSet = new Set();
     rawOuvidorias.forEach(r => {
         let n = findValue(r, ['nivel', 'nível']);
@@ -392,10 +418,23 @@ function buildLevels() {
     });
     let niveis = Array.from(niveisSet).sort();
     
-    levelSelect.innerHTML = '<option value="ALL">Todos os Níveis</option>';
-    niveis.forEach(n => {
-        levelSelect.add(new Option(n, n));
+    selects.forEach(sel => {
+        if (!sel) return;
+        sel.innerHTML = '<option value="ALL">Todos os Níveis</option>';
+        niveis.forEach(n => {
+            sel.add(new Option(n, n));
+        });
     });
+}
+
+function onLevelChange(val) {
+    const sel1 = document.getElementById('levelSelectSubNivel');
+    const sel2 = document.getElementById('levelSelectTendencia');
+    const sel3 = document.getElementById('levelSelectEvolucaoNiveis');
+    if (sel1) sel1.value = val;
+    if (sel2) sel2.value = val;
+    if (sel3) sel3.value = val;
+    updateLevelCharts(val);
 }
 
 function destroyChart(id) {
@@ -407,17 +446,21 @@ function renderTabs() {
     else renderSemestral();
 }
 
-function updateLevelCharts() {
+function updateLevelCharts(selectedLevel) {
+    if (!selectedLevel) {
+        const sel = document.getElementById('levelSelectSubNivel');
+        selectedLevel = sel ? sel.value : 'ALL';
+    }
+
     if (!rawOuvidorias || listaMeses.length === 0) return;
 
     let indexAtual = listaMeses.indexOf(document.getElementById('monthSelector').value);
     if(indexAtual === -1) indexAtual = listaMeses.length - 1;
     let meses6 = listaMeses.slice(Math.max(0, indexAtual - 5), indexAtual + 1);
-    
-    let selectedLevel = document.getElementById('levelSelector').value;
 
     let histSubPorNivel = {};
     let comboHist = {};
+    let histNiveis = {};
     let subTotals = {};
     let comboTotals = {};
 
@@ -433,6 +476,9 @@ function updateLevelCharts() {
                 subTotals[sub] = (subTotals[sub] || 0) + 1;
                 comboTotals[combo] = (comboTotals[combo] || 0) + 1;
 
+                if (!histNiveis[n]) histNiveis[n] = [0,0,0,0,0,0];
+                histNiveis[n][idx]++;
+
                 if (!histSubPorNivel[n]) histSubPorNivel[n] = {};
                 if (!histSubPorNivel[n][sub]) histSubPorNivel[n][sub] = [0,0,0,0,0,0];
                 histSubPorNivel[n][sub][idx]++;
@@ -443,7 +489,20 @@ function updateLevelCharts() {
         });
     });
 
-    // 1. Chart: Top Subcategoria por Nível
+    // 1. Chart: Evolução de Níveis
+    let dsNiveis = Object.keys(histNiveis).map((n, i) => ({ 
+        label: n, 
+        data: histNiveis[n], 
+        backgroundColor: palette[i % palette.length] 
+    }));
+    destroyChart('chartEvolucaoNiveis');
+    chartInstances['chartEvolucaoNiveis'] = new Chart(document.getElementById('chartEvolucaoNiveis'), {
+        type: 'bar', 
+        data: { labels: meses6, datasets: dsNiveis },
+        options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
+    });
+
+    // 2. Chart: Top Subcategoria por Nível
     let dsSubNivLinha = [];
     if (selectedLevel === 'ALL') {
         dsSubNivLinha = Object.keys(histSubPorNivel).map((n, i) => {
@@ -481,7 +540,7 @@ function updateLevelCharts() {
         }
     });
 
-    // 2. Chart: Tendência das 3 Principais Combinações
+    // 3. Chart: Tendência das 3 Principais Combinações
     let top3Cb = Object.keys(comboTotals).sort((a,b)=>comboTotals[b]-comboTotals[a]).slice(0,3);
     destroyChart('chartSemTendencia');
     chartInstances['chartSemTendencia'] = new Chart(document.getElementById('chartSemTendencia'), {
@@ -626,7 +685,7 @@ function renderSemestral() {
     
     let totOuv = 0, totAtd = 0;
     let volOuvMes = [], volAtdMes = [], taxaMes = [], raMes = [];
-    let histNiveis = {}, histSubcats = {}, histPlanos = {}, histClassif = {};
+    let histSubcats = {}, histPlanos = {}, histClassif = {};
     let subTotals = {}, planoTotals = {};
 
     meses6.forEach((m, idx) => {
@@ -641,7 +700,6 @@ function renderSemestral() {
         let raC = 0;
         subData.forEach(r => {
             if(String(findValue(r, ['reclame aqui', 'ra'])).toLowerCase() === 'true') raC++;
-            let n = findValue(r, ['nivel', 'nível']) || 'Sem Nível';
             let sub = findValue(r, ['sub categoria', 'subcategoria']) || 'Outros';
             let p = findValue(r, ['plano']) || 'Não Informado';
             let c = findValue(r, ['classificacao', 'classificação']) || 'Outros';
@@ -649,7 +707,6 @@ function renderSemestral() {
             subTotals[sub] = (subTotals[sub]||0)+1;
             planoTotals[p] = (planoTotals[p]||0)+1;
 
-            if(!histNiveis[n]) histNiveis[n] = [0,0,0,0,0,0]; histNiveis[n][idx]++;
             if(!histSubcats[sub]) histSubcats[sub] = [0,0,0,0,0,0]; histSubcats[sub][idx]++;
             if(!histPlanos[p]) histPlanos[p] = [0,0,0,0,0,0]; histPlanos[p][idx]++;
             if(!histClassif[c]) histClassif[c] = [0,0,0,0,0,0]; histClassif[c][idx]++;
@@ -698,14 +755,6 @@ function renderSemestral() {
         }
     });
 
-    // 2. Evolução de Níveis (Stacked)
-    let dsNiveis = Object.keys(histNiveis).map((n, i) => ({ label: n, data: histNiveis[n], backgroundColor: palette[i%palette.length] }));
-    destroyChart('chartEvolucaoNiveis');
-    chartInstances['chartEvolucaoNiveis'] = new Chart(document.getElementById('chartEvolucaoNiveis'), {
-        type: 'bar', data: { labels: meses6, datasets: dsNiveis },
-        options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
-    });
-
     // 3. Casos Reclame Aqui
     destroyChart('chartEvolucaoRA');
     chartInstances['chartEvolucaoRA'] = new Chart(document.getElementById('chartEvolucaoRA'), {
@@ -745,7 +794,7 @@ function renderSemestral() {
         options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
     });
 
-    // Atualiza isoladamente os dois gráficos sensíveis ao filtro de Nível
+    // Atualiza isoladamente os 3 gráficos sensíveis ao filtro de Nível
     updateLevelCharts();
 }
 </script>
