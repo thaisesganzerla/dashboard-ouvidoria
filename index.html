@@ -21,7 +21,7 @@
   
   /* Tabs - Verde Oficial Bling */
   .tabs-bar { background: #099655; padding: 10px 20px; display: flex; gap: 8px; }
-  .tab { flex: 1; padding: 9px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; color: #a4ecd0; background: transparent; border: 1.5px solid rgba(255,255,255,0.2); text-align: center; transition: all 0.15s; }
+  .tab { flex: 1; padding: 99px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; color: #a4ecd0; background: transparent; border: 1.5px solid rgba(255,255,255,0.2); text-align: center; transition: all 0.15s; padding: 9px 10px; }
   .tab.active { background: #fff; color: #099655; border-color: #fff; font-weight: 600; }
   .tab:hover:not(.active) { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.4); }
 
@@ -209,7 +209,6 @@
         </div>
       </div>
 
-      <!-- Nova linha: Subcategoria por Nível e Evolução de Classificação -->
       <div class="charts-row">
         <div class="card" id="card-sem-sub-nivel">
           <div class="card-header">
@@ -238,20 +237,8 @@
       </div>
 
       <div class="charts-row">
-        <div class="card" id="card-sem-tendencia">
-          <div class="card-header">
-            <span class="section-title">Tendência das 3 principais combinações</span>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <select id="levelSelectTendencia" class="card-level-select" onchange="onLevelChange(this.value)">
-                <option value="ALL">Todos os Níveis</option>
-              </select>
-              <button class="export-btn" onclick="exportCard('card-sem-tendencia')">⬇ Exportar</button>
-            </div>
-          </div>
-          <div style="position:relative;height:260px;"><canvas id="chartSemTendencia"></canvas></div>
-        </div>
-        <div class="card" id="card-sem-plano-sub">
-          <div class="card-header"><span class="section-title">Evolução: Top Planos x Subcategorias</span><button class="export-btn" onclick="exportCard('card-sem-plano-sub')">⬇ Exportar</button></div>
+        <div class="card" id="card-sem-plano-sub" style="grid-column: span 2;">
+          <div class="card-header"><span class="section-title">Top Planos x Subcategorias (Semestre)</span><button class="export-btn" onclick="exportCard('card-sem-plano-sub')">⬇ Exportar</button></div>
           <div style="position:relative;height:260px;"><canvas id="chartSemPlanoSub"></canvas></div>
         </div>
       </div>
@@ -424,7 +411,6 @@ function buildMonths() {
 function buildLevels() {
     const selects = [
         document.getElementById('levelSelectSubNivel'), 
-        document.getElementById('levelSelectTendencia'),
         document.getElementById('levelSelectEvolucaoNiveis'),
         document.getElementById('levelSelectClassificacao')
     ];
@@ -446,11 +432,9 @@ function buildLevels() {
 
 function onLevelChange(val) {
     const sel1 = document.getElementById('levelSelectSubNivel');
-    const sel2 = document.getElementById('levelSelectTendencia');
     const sel3 = document.getElementById('levelSelectEvolucaoNiveis');
     const sel4 = document.getElementById('levelSelectClassificacao');
     if (sel1) sel1.value = val;
-    if (sel2) sel2.value = val;
     if (sel3) sel3.value = val;
     if (sel4) sel4.value = val;
     updateLevelCharts(val);
@@ -478,11 +462,9 @@ function updateLevelCharts(selectedLevel) {
     let meses6 = listaMeses.slice(Math.max(0, indexAtual - 5), indexAtual + 1);
 
     let histSubPorNivel = {};
-    let comboHist = {};
     let histNiveis = {};
     let histClassif = {};
     let subTotals = {};
-    let comboTotals = {};
 
     meses6.forEach((m, idx) => {
         let subData = rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m);
@@ -491,11 +473,9 @@ function updateLevelCharts(selectedLevel) {
             let n = findValue(r, ['nivel', 'nível']) || 'Sem Nível';
             let sub = findValue(r, ['sub categoria', 'subcategoria']) || 'Outros';
             let c = findValue(r, ['classificacao', 'classificação']) || 'Outros';
-            let combo = `${n} + ${sub}`;
 
             if (selectedLevel === 'ALL' || n.toLowerCase() === selectedLevel.toLowerCase()) {
                 subTotals[sub] = (subTotals[sub] || 0) + 1;
-                comboTotals[combo] = (comboTotals[combo] || 0) + 1;
 
                 if (!histNiveis[n]) histNiveis[n] = [0,0,0,0,0,0];
                 histNiveis[n][idx]++;
@@ -503,9 +483,6 @@ function updateLevelCharts(selectedLevel) {
                 if (!histSubPorNivel[n]) histSubPorNivel[n] = {};
                 if (!histSubPorNivel[n][sub]) histSubPorNivel[n][sub] = [0,0,0,0,0,0];
                 histSubPorNivel[n][sub][idx]++;
-
-                if (!comboHist[combo]) comboHist[combo] = [0,0,0,0,0,0];
-                comboHist[combo][idx]++;
 
                 if (!histClassif[c]) histClassif[c] = [0,0,0,0,0,0];
                 histClassif[c][idx]++;
@@ -564,19 +541,7 @@ function updateLevelCharts(selectedLevel) {
         }
     });
 
-    // 3. Chart: Tendência das 3 Principais Combinações
-    let top3Cb = Object.keys(comboTotals).sort((a,b)=>comboTotals[b]-comboTotals[a]).slice(0,3);
-    destroyChart('chartSemTendencia');
-    chartInstances['chartSemTendencia'] = new Chart(document.getElementById('chartSemTendencia'), {
-        type: 'line', 
-        data: { labels: meses6, datasets: top3Cb.map((c, i) => ({ label: c, data: comboHist[c], borderColor: palette[i%palette.length], tension: 0.3 })) },
-        options: { 
-            responsive: true, maintainAspectRatio: false, 
-            plugins: { datalabels: { align: 'top', anchor: 'end', color: function(ctx) { return ctx.dataset.borderColor; }, backgroundColor: '#ffffffbb', borderRadius: 4 } } 
-        }
-    });
-
-    // 4. Chart: Evolução por Classificação
+    // 3. Chart: Evolução por Classificação
     let classifColors = palette.slice().reverse();
     let dsClassif = Object.keys(histClassif).map((c, i) => ({ 
         label: c, 
@@ -709,7 +674,7 @@ function renderMensal() {
         options: { responsive: true, maintainAspectRatio: false }
     });
 
-    // 7. Classificação por Nível (Novo Gráfico)
+    // 7. Classificação por Nível
     let niveisKeys = Object.keys(classifPorNivel).sort();
     let allClassifs = Object.keys(classif);
     let dsClassifNivel = allClassifs.map((c, i) => ({
@@ -742,6 +707,7 @@ function renderSemestral() {
     let volOuvMes = [], volAtdMes = [], taxaMes = [], raMes = [];
     let histSubcats = {}, histPlanos = {};
     let subTotals = {}, planoTotals = {};
+    let planoPorSubSem = {}, planoTotalsSem = {}, subTotalsSem = {};
 
     meses6.forEach((m, idx) => {
         let subData = rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m);
@@ -760,6 +726,11 @@ function renderSemestral() {
 
             subTotals[sub] = (subTotals[sub]||0)+1;
             planoTotals[p] = (planoTotals[p]||0)+1;
+
+            if (p.trim()) planoTotalsSem[p] = (planoTotalsSem[p] || 0) + 1;
+            if (sub.trim()) subTotalsSem[sub] = (subTotalsSem[sub] || 0) + 1;
+            if (!planoPorSubSem[p]) planoPorSubSem[p] = {};
+            planoPorSubSem[p][sub] = (planoPorSubSem[p][sub] || 0) + 1;
 
             if(!histSubcats[sub]) histSubcats[sub] = [0,0,0,0,0,0]; histSubcats[sub][idx]++;
             if(!histPlanos[p]) histPlanos[p] = [0,0,0,0,0,0]; histPlanos[p][idx]++;
@@ -831,10 +802,20 @@ function renderSemestral() {
         options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
     });
 
-    // 5. Evolução Planos x Subcats (Stacked)
+    // 5. Top Planos x Subcategorias (Semestre) - Eixo X com o nome dos Planos
+    let top5PlSem = Object.keys(planoTotalsSem).sort((a,b) => planoTotalsSem[b] - planoTotalsSem[a]).slice(0, 5);
+    let top5SubSem = Object.keys(subTotalsSem).sort((a,b) => subTotalsSem[b] - subTotalsSem[a]).slice(0, 5);
+
+    let dsSemPlanoSub = top5SubSem.map((sub, i) => ({
+        label: sub,
+        data: top5PlSem.map(pl => (planoPorSubSem[pl] && planoPorSubSem[pl][sub]) ? planoPorSubSem[pl][sub] : 0),
+        backgroundColor: palette[i % palette.length]
+    }));
+
     destroyChart('chartSemPlanoSub');
     chartInstances['chartSemPlanoSub'] = new Chart(document.getElementById('chartSemPlanoSub'), {
-        type: 'bar', data: { labels: meses6, datasets: top5Sub.map((s, i) => ({ label: s, data: histSubcats[s], backgroundColor: palette[i%palette.length] })) },
+        type: 'bar',
+        data: { labels: top5PlSem, datasets: dsSemPlanoSub },
         options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
     });
 
