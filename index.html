@@ -36,7 +36,7 @@
   .filter-area select { padding: 4px 8px; border-radius: 6px; border: 1px solid #c5ecd8; background: #f4fdf7; color: #099655; outline: none; font-weight: 600; }
 
   /* Filtro de Nível Local nos Cards */
-  .card-level-select { padding: 3px 6px; border-radius: 6px; border: 1px solid #c5ecd8; background: #f4fdf7; color: #099655; outline: none; font-weight: 600; font-size: 11px; }
+  .card-level-select { padding: 3px 8px; border-radius: 6px; border: 1px solid #c5ecd8; background: #f4fdf7; color: #099655; outline: none; font-weight: 600; font-size: 11px; max-width: 200px; }
 
   /* Body */
   .body { background: #f8faf9; padding: 16px; display: flex; flex-direction: column; gap: 16px; border-radius: 0 0 14px 14px; }
@@ -106,13 +106,13 @@
       </div>
 
       <div class="charts-row">
-        <!-- Reclame Aqui (Linha Diária) -->
+        <!-- Reclame Aqui (Barras Mensais) -->
         <div class="card" id="card-ra-linha">
-          <div class="card-header"><span class="section-title">Casos Reclame Aqui (Evolução Diária)</span><button class="export-btn" onclick="exportCard('card-ra-linha')">⬇ Exportar</button></div>
+          <div class="card-header"><span class="section-title">Casos Reclame Aqui</span><button class="export-btn" onclick="exportCard('card-ra-linha')">⬇ Exportar</button></div>
           <div style="position:relative;height:240px;"><canvas id="chartRAMensalLinha"></canvas></div>
         </div>
         <div class="card" id="card-niveis">
-          <div class="card-header"><span class="section-title">Volume por Nível</span><button class="export-btn" onclick="exportCard('card-niveis')">⬇ Exportar</button></div>
+          <div class="card-header"><span class="section-title">Ouvidoria por nível</span><button class="export-btn" onclick="exportCard('card-niveis')">⬇ Exportar</button></div>
           <div style="position:relative;height:240px;"><canvas id="chartNiveisMensal"></canvas></div>
         </div>
       </div>
@@ -123,29 +123,27 @@
           <div style="position:relative;height:240px;"><canvas id="chartPlanosMensal"></canvas></div>
         </div>
         <div class="card" id="card-topsubcats">
-          <div class="card-header"><span class="section-title">Top 5 Subcategorias</span><button class="export-btn" onclick="exportCard('card-topsubcats')">⬇ Exportar</button></div>
+          <div class="card-header"><span class="section-title">Principais motivos</span><button class="export-btn" onclick="exportCard('card-topsubcats')">⬇ Exportar</button></div>
           <div style="position:relative;height:240px;"><canvas id="chartTopSubcatsMensal"></canvas></div>
         </div>
       </div>
 
       <div class="charts-row">
-        <div class="card" id="card-sub-nivel">
-          <div class="card-header"><span class="section-title">Top Subcategoria por Nível</span><button class="export-btn" onclick="exportCard('card-sub-nivel')">⬇ Exportar</button></div>
+        <div class="card" id="card-sub-nivel" style="grid-column: span 2;">
+          <div class="card-header"><span class="section-title">Principal queixa por nível</span><button class="export-btn" onclick="exportCard('card-sub-nivel')">⬇ Exportar</button></div>
           <div style="position:relative;height:240px;"><canvas id="chartSubPorNivel"></canvas></div>
-        </div>
-        <div class="card" id="card-plano-sub">
-          <div class="card-header"><span class="section-title">Top Planos x Subcategorias</span><button class="export-btn" onclick="exportCard('card-plano-sub')">⬇ Exportar</button></div>
-          <div style="position:relative;height:240px;"><canvas id="chartPlanoSub"></canvas></div>
         </div>
       </div>
 
       <!-- Nova linha: Classificação e Classificação por Nível -->
       <div class="charts-row">
         <div class="card" id="card-classificacao">
-          <div class="card-header"><span class="section-title">Distribuição por Classificação</span><button class="export-btn" onclick="exportCard('card-classificacao')">⬇ Exportar</button></div>
+          <div class="card-header"><span class="section-title">Categoria da ouvidoria</span><button class="export-btn" onclick="exportCard('card-classificacao')">⬇ Exportar</button></div>
           <div style="position:relative;height:260px;"><canvas id="chartClassificacaoMensal"></canvas></div>
         </div>
-        <div class="card" id="card-classif-nivel">
+      </div>
+      <div class="charts-row">
+        <div class="card" id="card-classif-nivel" style="grid-column: span 2;">
           <div class="card-header"><span class="section-title">Classificação por Nível</span><button class="export-btn" onclick="exportCard('card-classif-nivel')">⬇ Exportar</button></div>
           <div style="position:relative;height:260px;"><canvas id="chartClassifNivelMensal"></canvas></div>
         </div>
@@ -154,7 +152,7 @@
       <!-- Linha: Top Ofensores por Grupo -->
       <div class="charts-row">
         <div class="card" id="card-grupos" style="grid-column: span 2;">
-            <div class="card-header"><span class="section-title">Top Ofensores por Grupo</span><button class="export-btn" onclick="exportCard('card-grupos')">⬇ Exportar</button></div>
+            <div class="card-header"><span class="section-title">Setores com mais ouvidorias</span><button class="export-btn" onclick="exportCard('card-grupos')">⬇ Exportar</button></div>
             <div style="position:relative;height:260px;"><canvas id="chartGruposMensal"></canvas></div>
         </div>
       </div>
@@ -175,73 +173,49 @@
       </div>
       
       <div class="charts-row">
-        <div class="card" id="card-evolucao-niveis">
+        <div class="card" id="card-evolucao-niveis" style="grid-column: span 2;">
           <div class="card-header">
-            <span class="section-title">Evolução de Níveis</span>
+            <span class="section-title">Volume e % por nível</span>
             <div style="display:flex; gap:8px; align-items:center;">
-              <select id="levelSelectEvolucaoNiveis" class="card-level-select" onchange="onLevelChange(this.value)">
-                <option value="ALL">Todos os Níveis</option>
+              <select id="levelSelectEvolucaoNiveis" class="card-level-select" onchange="updateEvolucaoNiveis(this.value)">
+                <option value="L1">L1</option>
               </select>
               <button class="export-btn" onclick="exportCard('card-evolucao-niveis')">⬇ Exportar</button>
             </div>
           </div>
           <div style="position:relative;height:250px;"><canvas id="chartEvolucaoNiveis"></canvas></div>
         </div>
-        <!-- Reclame Aqui (Barras Mensais) -->
-        <div class="card" id="card-evolucao-ra">
-          <div class="card-header"><span class="section-title">Casos Reclame Aqui</span><button class="export-btn" onclick="exportCard('card-evolucao-ra')">⬇ Exportar</button></div>
-          <div style="position:relative;height:250px;"><canvas id="chartEvolucaoRA"></canvas></div>
-        </div>
+
       </div>
 
       <div class="charts-row">
         <div class="card" id="card-sem-subcats">
-          <div class="card-header" style="margin-bottom: 4px;">
-            <span class="section-title">Top 5 Subcategorias (Mês a Mês)</span>
-            <button class="export-btn" onclick="exportCard('card-sem-subcats')">⬇ Exportar</button>
+          <div class="card-header">
+            <span class="section-title">Volume e % por queixa</span>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <select id="subcatSelectSem" class="card-level-select" onchange="updateSemSubcats(this.value)">
+                <option value="">-</option>
+              </select>
+              <button class="export-btn" onclick="exportCard('card-sem-subcats')">⬇ Exportar</button>
+            </div>
           </div>
-          <p style="font-size: 11px; color: #737373; margin-bottom: 12px;">Apresenta o ranking mensal das cinco subcategorias com maior volume de ocorrências.</p>
           <div style="position:relative;height:250px;"><canvas id="chartSemSubcats"></canvas></div>
         </div>
         <div class="card" id="card-sem-planos">
-          <div class="card-header"><span class="section-title">Planos mais Acionados (Mês a Mês)</span><button class="export-btn" onclick="exportCard('card-sem-planos')">⬇ Exportar</button></div>
+          <div class="card-header">
+            <span class="section-title">Volume e % por plano</span>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <select id="planoSelectSem" class="card-level-select" onchange="updateSemPlanos(this.value)">
+                <option value="">-</option>
+              </select>
+              <button class="export-btn" onclick="exportCard('card-sem-planos')">⬇ Exportar</button>
+            </div>
+          </div>
           <div style="position:relative;height:250px;"><canvas id="chartSemPlanos"></canvas></div>
         </div>
       </div>
 
-      <div class="charts-row">
-        <div class="card" id="card-sem-sub-nivel">
-          <div class="card-header">
-            <span class="section-title">Top Subcategoria Acionada por Nível (Mês a Mês)</span>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <select id="levelSelectSubNivel" class="card-level-select" onchange="onLevelChange(this.value)">
-                <option value="ALL">Todos os Níveis</option>
-              </select>
-              <button class="export-btn" onclick="exportCard('card-sem-sub-nivel')">⬇ Exportar</button>
-            </div>
-          </div>
-          <div style="position:relative;height:260px;"><canvas id="chartSemSubNivel"></canvas></div>
-        </div>
-        <div class="card" id="card-sem-classificacao">
-          <div class="card-header">
-            <span class="section-title">Evolução por Classificação</span>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <select id="levelSelectClassificacao" class="card-level-select" onchange="onLevelChange(this.value)">
-                <option value="ALL">Todos os Níveis</option>
-              </select>
-              <button class="export-btn" onclick="exportCard('card-sem-classificacao')">⬇ Exportar</button>
-            </div>
-          </div>
-          <div style="position:relative;height:260px;"><canvas id="chartSemClassificacao"></canvas></div>
-        </div>
-      </div>
 
-      <div class="charts-row">
-        <div class="card" id="card-sem-plano-sub" style="grid-column: span 2;">
-          <div class="card-header"><span class="section-title">Top Planos x Subcategorias (Semestre)</span><button class="export-btn" onclick="exportCard('card-sem-plano-sub')">⬇ Exportar</button></div>
-          <div style="position:relative;height:260px;"><canvas id="chartSemPlanoSub"></canvas></div>
-        </div>
-      </div>
 
     </div>
   </div>
@@ -357,12 +331,37 @@ function setTab(i) {
   document.querySelectorAll('.page').forEach((p,j)=>p.classList.toggle('active',i===j));
   currentTab = i;
   if(rawOuvidorias) renderTabs();
+  if(i === 1) {
+    const sel = document.getElementById('levelSelectEvolucaoNiveis');
+    if(sel && sel.options.length > 0 && !sel.value) {
+      sel.value = sel.options[0].value;
+      updateEvolucaoNiveis(sel.value);
+    }
+  }
 }
 
 async function exportCard(cardId) {
   const card = document.getElementById(cardId);
   if (!card) return;
   card.classList.add('exporting');
+
+  // Replace each <select> inside the card with a styled <span> showing the selected text
+  const selects = Array.from(card.querySelectorAll('select'));
+  const replacements = selects.map(sel => {
+    const selectedText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '';
+    const span = document.createElement('span');
+    span.textContent = selectedText;
+    span.style.cssText = [
+      'display:inline-block', 'padding:3px 10px', 'border-radius:6px',
+      'border:1px solid #c5ecd8', 'background:#f4fdf7', 'color:#099655',
+      'font-weight:600', 'font-size:11px', 'font-family:inherit',
+      'white-space:nowrap', 'vertical-align:middle'
+    ].join(';');
+    sel.parentNode.insertBefore(span, sel);
+    sel.style.display = 'none';
+    return { sel, span };
+  });
+
   await new Promise(r => setTimeout(r, 60));
   try {
     const canvas = await html2canvas(card, { backgroundColor: '#ffffff', scale: 2 });
@@ -371,6 +370,10 @@ async function exportCard(cardId) {
     a.download = cardId + '.png';
     a.click();
   } finally {
+    replacements.forEach(({ sel, span }) => {
+      sel.style.display = '';
+      span.remove();
+    });
     card.classList.remove('exporting');
   }
 }
@@ -467,9 +470,8 @@ function buildMonths() {
 }
 
 function buildLevels() {
-    const selects = [
+    const otherSelects = [
         document.getElementById('levelSelectSubNivel'), 
-        document.getElementById('levelSelectEvolucaoNiveis'),
         document.getElementById('levelSelectClassificacao')
     ];
     const niveisSet = new Set();
@@ -477,15 +479,25 @@ function buildLevels() {
         let n = findValue(r, ['nivel', 'nível']);
         if (n && n.trim()) niveisSet.add(n.trim());
     });
-    let niveis = Array.from(niveisSet).sort();
-    
-    selects.forEach(sel => {
-        if (!sel) return;
-        sel.innerHTML = '<option value="ALL">Todos os Níveis</option>';
-        niveis.forEach(n => {
-            sel.add(new Option(n, n));
-        });
-    });
+    const niveisOrdem = ['L1','L2','L3','L4'];
+    let niveis = niveisOrdem.filter(n => niveisSet.has(n));
+    Array.from(niveisSet).sort().forEach(n => { if (!niveis.includes(n)) niveis.push(n); });
+
+    const selNivel = document.getElementById('levelSelectEvolucaoNiveis');
+    if (selNivel) {
+        selNivel.innerHTML = '';
+        niveis.forEach(n => selNivel.add(new Option(n, n)));
+        selNivel.value = niveis[0] || '';
+        updateEvolucaoNiveis(selNivel.value);
+    }
+
+    const selClassif = document.getElementById('levelSelectClassificacao');
+    if (selClassif) {
+        selClassif.innerHTML = '';
+        niveis.forEach(n => selClassif.add(new Option(n, n)));
+        selClassif.value = niveis[0] || '';
+        updateLevelCharts(niveis[0] || 'ALL');
+    }
 }
 
 function onLevelChange(val) {
@@ -505,6 +517,52 @@ function destroyChart(id) {
 function renderTabs() {
     if (currentTab === 0) renderMensal();
     else renderSemestral();
+}
+
+function updateEvolucaoNiveis(selectedLevel) {
+    if (!rawOuvidorias || listaMeses.length === 0) return;
+    let indexAtual = listaMeses.indexOf(document.getElementById('monthSelector').value);
+    if(indexAtual === -1) indexAtual = listaMeses.length - 1;
+    let meses6 = listaMeses.slice(Math.max(0, indexAtual - 5), indexAtual + 1);
+
+    let totalPorMes = meses6.map(m =>
+        rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m).length
+    );
+
+    let volPorMes = meses6.map((m, idx) => {
+        let subData = rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m);
+        return subData.filter(r => {
+            let n = findValue(r, ['nivel', 'nível']) || '';
+            return n.toLowerCase() === selectedLevel.toLowerCase();
+        }).length;
+    });
+
+    destroyChart('chartEvolucaoNiveis');
+    chartInstances['chartEvolucaoNiveis'] = new Chart(document.getElementById('chartEvolucaoNiveis'), {
+        type: 'bar',
+        data: { labels: meses6, datasets: [{ label: selectedLevel, data: volPorMes, backgroundColor: getColor(selectedLevel), borderRadius: 4 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { display: false }, grid: { color: '#e8f9ef' } } },
+            plugins: {
+                legend: { display: false },
+                datalabels: {
+                    display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] > 0; },
+                    formatter: function(val, ctx) {
+                        let idx = ctx.dataIndex;
+                        let pct = totalPorMes[idx] > 0 ? ((val / totalPorMes[idx]) * 100).toFixed(1) : 0;
+                        return val + '\n(' + pct + '%)';
+                    },
+                    color: '#fff',
+                    font: { weight: 'bold', size: 11 },
+                    textAlign: 'center',
+                    anchor: 'center', align: 'center',
+                    offset: 0
+                }
+            },
+            layout: { padding: { top: 8 } }
+        }
+    });
 }
 
 function updateLevelCharts(selectedLevel) {
@@ -548,69 +606,46 @@ function updateLevelCharts(selectedLevel) {
         });
     });
 
-    // 1. Chart: Evolução de Níveis
     let dsNiveis = Object.keys(histNiveis).map(n => ({ 
         label: n, 
         data: histNiveis[n], 
         backgroundColor: getColor(n) 
     }));
     destroyChart('chartEvolucaoNiveis');
-    chartInstances['chartEvolucaoNiveis'] = new Chart(document.getElementById('chartEvolucaoNiveis'), {
-        type: 'bar', 
-        data: { labels: meses6, datasets: dsNiveis },
-        options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
-    });
-
-    // 2. Chart: Top Subcategoria por Nível
-    let dsSubNivLinha = [];
-    if (selectedLevel === 'ALL') {
-        dsSubNivLinha = Object.keys(histSubPorNivel).map(n => {
-            let maxSub = Object.keys(histSubPorNivel[n]).sort((a,b)=> subTotals[b] - subTotals[a])[0]; 
-            return { 
-                label: `${n} (${maxSub || 'Outros'})`, 
-                data: maxSub ? histSubPorNivel[n][maxSub] : [0,0,0,0,0,0], 
-                borderColor: getColor(maxSub || n), 
-                tension: 0.3 
-            };
-        });
-    } else {
-        let topSubForLevel = Object.keys(subTotals).sort((a,b) => subTotals[b] - subTotals[a]).slice(0, 3);
-        dsSubNivLinha = topSubForLevel.map(sub => {
-            let dataArr = [0,0,0,0,0,0];
-            if (histSubPorNivel[selectedLevel] && histSubPorNivel[selectedLevel][sub]) {
-                dataArr = histSubPorNivel[selectedLevel][sub];
+    if (document.getElementById('chartEvolucaoNiveis') && dsNiveis.length > 0 && selectedLevel === 'ALL') {
+        chartInstances['chartEvolucaoNiveis'] = new Chart(document.getElementById('chartEvolucaoNiveis'), {
+            type: 'bar', 
+            data: { labels: meses6, datasets: dsNiveis },
+            options: { 
+                responsive: true, maintainAspectRatio: false, 
+                scales: { x: { stacked: true }, y: { stacked: true } },
+                plugins: {
+                    datalabels: {
+                        display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] > 0; },
+                        formatter: val => val,
+                        color: '#fff',
+                        font: { weight: 'bold', size: 10 },
+                        anchor: 'center', align: 'center'
+                    }
+                }
             }
-            return {
-                label: `${selectedLevel}: ${sub}`,
-                data: dataArr,
-                borderColor: getColor(sub),
-                tension: 0.3
-            };
         });
     }
 
-    destroyChart('chartSemSubNivel');
-    chartInstances['chartSemSubNivel'] = new Chart(document.getElementById('chartSemSubNivel'), {
-        type: 'line', 
-        data: { labels: meses6, datasets: dsSubNivLinha },
-        options: { 
-            responsive: true, maintainAspectRatio: false, 
-            plugins: { datalabels: { align: 'top', anchor: 'end', color: function(ctx) { return ctx.dataset.borderColor; }, backgroundColor: '#ffffffbb', borderRadius: 4 } } 
-        }
-    });
-
-    // 3. Chart: Evolução por Classificação
+    const selClassifEl = document.getElementById('levelSelectClassificacao');
     let dsClassif = Object.keys(histClassif).map(c => ({ 
         label: c, 
         data: histClassif[c], 
         backgroundColor: getColor(c) 
     }));
     destroyChart('chartSemClassificacao');
-    chartInstances['chartSemClassificacao'] = new Chart(document.getElementById('chartSemClassificacao'), {
-        type: 'bar', 
-        data: { labels: meses6, datasets: dsClassif },
-        options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
-    });
+    if (document.getElementById('chartSemClassificacao')) {
+        chartInstances['chartSemClassificacao'] = new Chart(document.getElementById('chartSemClassificacao'), {
+            type: 'bar', 
+            data: { labels: meses6, datasets: dsClassif },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
+        });
+    }
 }
 
 function renderMensal() {
@@ -664,41 +699,134 @@ function renderMensal() {
     document.getElementById('kpiTaxaMensal').innerText = totalAtd > 0 ? ((totalOuv / totalAtd) * 100).toFixed(2).replace('.', ',') + '%' : '0,00%';
     document.getElementById('kpiTMRMensal').innerText = concluidos > 0 ? (totalDias / concluidos).toFixed(1).replace('.', ',') : '-';
 
-    // 0. Reclame Aqui Mensal
-    let diasSorted = Object.keys(raPorDia).sort((a,b) => parseInt(a)-parseInt(b));
+    let indexAtualRA = listaMeses.indexOf(m);
+    if(indexAtualRA === -1) indexAtualRA = listaMeses.length - 1;
+    let meses6RA = listaMeses.slice(Math.max(0, indexAtualRA - 5), indexAtualRA + 1);
+    let raMesRA = meses6RA.map(mes => {
+        let subDataRA = rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === mes);
+        return subDataRA.filter(r => String(findValue(r, ['reclame aqui', 'ra'])).toLowerCase() === 'true').length;
+    });
     destroyChart('chartRAMensalLinha');
     chartInstances['chartRAMensalLinha'] = new Chart(document.getElementById('chartRAMensalLinha'), {
-        type: 'line', data: { labels: diasSorted.map(d=>`${d}/${m.split('/')[0]}`), datasets: [{ label: 'Reclame Aqui', data: diasSorted.map(d=>raPorDia[d]), borderColor: '#d03b3b', backgroundColor: 'rgba(208, 59, 59, 0.1)', fill: true, tension: 0.3 }] },
-        options: { 
-            responsive: true, maintainAspectRatio: false, 
-            plugins: { datalabels: { align: 'top', anchor: 'end', color: '#d03b3b', backgroundColor: '#ffffffbb', borderRadius: 4 } } 
+        type: 'bar', data: { labels: meses6RA, datasets: [{ label: 'Casos RA', data: raMesRA, backgroundColor: '#d03b3b', borderRadius: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { align: 'start', anchor: 'end' } } }
+    });
+
+    let niveisLabels = Object.keys(niveis);
+    let niveisValues = Object.values(niveis);
+    let niveisTotal = niveisValues.reduce((a,b)=>a+b,0);
+    destroyChart('chartNiveisMensal');
+    chartInstances['chartNiveisMensal'] = new Chart(document.getElementById('chartNiveisMensal'), {
+        type: 'doughnut',
+        data: { labels: niveisLabels, datasets: [{ data: niveisValues, backgroundColor: niveisLabels.map(n => getColor(n)) }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            layout: { padding: 40 },
+            plugins: {
+                legend: { display: true, position: 'right', align: 'center', labels: { boxWidth: 12, font: { size: 11 }, padding: 10 } },
+                datalabels: {
+                    display: function(ctx) {
+                        let val = ctx.dataset.data[ctx.dataIndex];
+                        return val > 0;
+                    },
+                    formatter: function(val, ctx) {
+                        let pct = niveisTotal > 0 ? ((val / niveisTotal) * 100).toFixed(1) : 0;
+                        return val + ' (' + pct + '%)';
+                    },
+                    color: function(ctx) {
+                        let val = ctx.dataset.data[ctx.dataIndex];
+                        let pct = niveisTotal > 0 ? val / niveisTotal : 0;
+                        return pct < 0.10 ? '#222' : '#fff';
+                    },
+                    backgroundColor: function(ctx) {
+                        let val = ctx.dataset.data[ctx.dataIndex];
+                        let pct = niveisTotal > 0 ? val / niveisTotal : 0;
+                        return pct < 0.10 ? 'rgba(255,255,255,0.9)' : 'transparent';
+                    },
+                    borderRadius: 3,
+                    padding: { top: 2, bottom: 2, left: 3, right: 3 },
+                    anchor: function(ctx) {
+                        let val = ctx.dataset.data[ctx.dataIndex];
+                        let pct = niveisTotal > 0 ? val / niveisTotal : 0;
+                        return pct < 0.10 ? 'end' : 'center';
+                    },
+                    align: function(ctx) {
+                        let val = ctx.dataset.data[ctx.dataIndex];
+                        let pct = niveisTotal > 0 ? val / niveisTotal : 0;
+                        return pct < 0.10 ? 'end' : 'center';
+                    },
+                    offset: function(ctx) {
+                        let val = ctx.dataset.data[ctx.dataIndex];
+                        let pct = niveisTotal > 0 ? val / niveisTotal : 0;
+                        return pct < 0.10 ? 8 : 0;
+                    },
+                    font: { weight: 'bold', size: 10 },
+                    clamp: false
+                }
+            }
         }
     });
 
-    // 1. Volume por Nível (Rosca)
-    destroyChart('chartNiveisMensal');
-    chartInstances['chartNiveisMensal'] = new Chart(document.getElementById('chartNiveisMensal'), {
-        type: 'doughnut', data: { labels: Object.keys(niveis), datasets: [{ data: Object.values(niveis), backgroundColor: Object.keys(niveis).map(n => getColor(n)) }] },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-
-    // 2. Planos mais Acionados (Barras verticais)
-    let topPlanos = Object.entries(planos).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const planosOrdem = ['Elite', 'Diamante', 'Titânio Tier 3', 'Titânio Tier 2', 'Titânio Tier 1', 'Cobalto'];
+    let planosFiltrados = planosOrdem.filter(p => planos[p] && planos[p] > 0);
     destroyChart('chartPlanosMensal');
     chartInstances['chartPlanosMensal'] = new Chart(document.getElementById('chartPlanosMensal'), {
-        type: 'bar', data: { labels: topPlanos.map(s=>s[0]), datasets: [{ label: 'Volume', data: topPlanos.map(s=>s[1]), backgroundColor: topPlanos.map(s=>getColor(s[0])), borderRadius: 4 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { align: 'start', anchor: 'end' } } }
+        type: 'bar',
+        data: {
+            labels: planosFiltrados,
+            datasets: [{
+                label: 'Volume',
+                data: planosFiltrados.map(p => planos[p] || 0),
+                backgroundColor: planosFiltrados.map(p => getColor(p)),
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                datalabels: {
+                    anchor: function(ctx) {
+                        let val = ctx.dataset.data[ctx.dataIndex];
+                        let max = Math.max(...ctx.dataset.data);
+                        return (val / max) > 0.35 ? 'center' : 'end';
+                    },
+                    align: function(ctx) {
+                        let val = ctx.dataset.data[ctx.dataIndex];
+                        let max = Math.max(...ctx.dataset.data);
+                        return (val / max) > 0.35 ? 'center' : 'top';
+                    },
+                    color: function(ctx) {
+                        let val = ctx.dataset.data[ctx.dataIndex];
+                        let max = Math.max(...ctx.dataset.data);
+                        return (val / max) > 0.35 ? '#fff' : '#333';
+                    },
+                    font: { weight: 'bold', size: 11 },
+                    formatter: val => val
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { display: false },
+                    grid: { color: '#e8f9ef', drawBorder: false }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { maxRotation: 0, minRotation: 0, font: { size: 10 } }
+                }
+            },
+            layout: { padding: { top: 24 } }
+        }
     });
 
-    // 3. Top 5 Subcategorias (Barras horizontais)
     let topSub = Object.entries(subcats).sort((a,b)=>b[1]-a[1]).slice(0,5);
     destroyChart('chartTopSubcatsMensal');
     chartInstances['chartTopSubcatsMensal'] = new Chart(document.getElementById('chartTopSubcatsMensal'), {
         type: 'bar', data: { labels: topSub.map(s=>s[0]), datasets: [{ label: 'Volume', data: topSub.map(s=>s[1]), backgroundColor: topSub.map(s=>getColor(s[0])), borderRadius: 4 }] },
-        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { datalabels: { align: 'start', anchor: 'end' } } }
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { align: 'start', anchor: 'end' } } }
     });
 
-    // 4. Top Subcategoria por Nível (Barras horizontais)
     let subNivelLabels = [], subNivelData = [];
     Object.keys(subPorNivel).forEach(n => {
         let maxSub = Object.keys(subPorNivel[n]).sort((a,b) => subPorNivel[n][b] - subPorNivel[n][a])[0];
@@ -708,29 +836,54 @@ function renderMensal() {
     destroyChart('chartSubPorNivel');
     chartInstances['chartSubPorNivel'] = new Chart(document.getElementById('chartSubPorNivel'), {
         type: 'bar', data: { labels: subNivelLabels, datasets: [{ label: 'Volume', data: subNivelData, backgroundColor: subNivelLabels.map(lbl => getColor(lbl.split(' - ')[0])), borderRadius: 4 }] },
-        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { datalabels: { align: 'start', anchor: 'end' } } }
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { align: 'start', anchor: 'end' } } }
     });
 
-    // 5. Top Planos x Subcategorias (Stacked)
-    let p5 = topPlanos.map(p=>p[0]);
-    let s5 = topSub.map(s=>s[0]);
-    let dsPlanoSub = s5.map(sub => ({
-        label: sub, data: p5.map(pl => (planoPorSub[pl] && planoPorSub[pl][sub]) ? planoPorSub[pl][sub] : 0), backgroundColor: getColor(sub)
-    }));
-    destroyChart('chartPlanoSub');
-    chartInstances['chartPlanoSub'] = new Chart(document.getElementById('chartPlanoSub'), {
-        type: 'bar', data: { labels: p5, datasets: dsPlanoSub },
-        options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
-    });
-
-    // 6. Distribuição por Classificação
+    let classifLabels = Object.keys(classif);
+    let classifValues = Object.values(classif);
+    let classifTotal = classifValues.reduce((a,b)=>a+b,0);
     destroyChart('chartClassificacaoMensal');
     chartInstances['chartClassificacaoMensal'] = new Chart(document.getElementById('chartClassificacaoMensal'), {
-        type: 'doughnut', data: { labels: Object.keys(classif), datasets: [{ data: Object.values(classif), backgroundColor: Object.keys(classif).map(c => getColor(c)) }] },
-        options: { responsive: true, maintainAspectRatio: false }
+        type: 'doughnut',
+        data: { labels: classifLabels, datasets: [{ data: classifValues, backgroundColor: classifLabels.map(c => getColor(c)) }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            layout: { padding: 40 },
+            plugins: {
+                legend: { display: true, position: 'right', align: 'center', labels: { boxWidth: 12, font: { size: 11 }, padding: 10 } },
+                datalabels: {
+                    display: true,
+                    formatter: function(val, ctx) {
+                        let pct = classifTotal > 0 ? ((val / classifTotal) * 100).toFixed(1) : 0;
+                        return val + ' (' + pct + '%)';
+                    },
+                    color: function(ctx) {
+                        let val = ctx.dataset.data[ctx.dataIndex];
+                        let pct = classifTotal > 0 ? val / classifTotal : 0;
+                        return pct < 0.08 ? '#222' : '#fff';
+                    },
+                    anchor: function(ctx) {
+                        let val = ctx.dataset.data[ctx.dataIndex];
+                        let pct = classifTotal > 0 ? val / classifTotal : 0;
+                        return pct < 0.08 ? 'end' : 'center';
+                    },
+                    align: function(ctx) {
+                        let val = ctx.dataset.data[ctx.dataIndex];
+                        let pct = classifTotal > 0 ? val / classifTotal : 0;
+                        return pct < 0.08 ? 'end' : 'center';
+                    },
+                    offset: function(ctx) {
+                        let val = ctx.dataset.data[ctx.dataIndex];
+                        let pct = classifTotal > 0 ? val / classifTotal : 0;
+                        return pct < 0.08 ? 12 : 0;
+                    },
+                    font: { weight: 'bold', size: 10 },
+                    clamp: false
+                }
+            }
+        }
     });
 
-    // 7. Classificação por Nível
     let niveisKeys = Object.keys(classifPorNivel).sort();
     let allClassifs = Object.keys(classif);
     let dsClassifNivel = allClassifs.map(c => ({
@@ -740,17 +893,127 @@ function renderMensal() {
     }));
     destroyChart('chartClassifNivelMensal');
     chartInstances['chartClassifNivelMensal'] = new Chart(document.getElementById('chartClassifNivelMensal'), {
-        type: 'bar', data: { labels: niveisKeys, datasets: dsClassifNivel },
-        options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
+        type: 'bar',
+        data: { labels: niveisKeys, datasets: dsClassifNivel },
+        options: {
+            indexAxis: 'y',
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { stacked: true, ticks: { display: false }, grid: { display: false } },
+                y: { stacked: true }
+            },
+            plugins: {
+                datalabels: {
+                    display: function(ctx) {
+                        let val = ctx.dataset.data[ctx.dataIndex];
+                        return val > 0;
+                    },
+                    formatter: val => val,
+                    color: '#fff',
+                    font: { weight: 'bold', size: 10 },
+                    anchor: 'center',
+                    align: 'center',
+                    overflow: 'allow'
+                }
+            },
+            layout: { padding: { right: 8 } }
+        }
     });
 
-    // 8. Top Ofensores por Grupo
     let topGp = Object.entries(grupos).sort((a,b)=>b[1]-a[1]).slice(0,10);
     destroyChart('chartGruposMensal');
     chartInstances['chartGruposMensal'] = new Chart(document.getElementById('chartGruposMensal'), {
         type: 'bar', data: { labels: topGp.map(g=>g[0]), datasets: [{ label: 'Volume', data: topGp.map(g=>g[1]), backgroundColor: topGp.map(g => getColor(g[0])), borderRadius: 4 }] },
         options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { datalabels: { align: 'start', anchor: 'end' }, legend: { display: false } } }
     });
+}
+
+// ---- VARIÁVEIS DE CACHE PARA O FILTRO DOS GRÁFICOS SEMESTRAIS ----
+let _semSubcatsCache = { meses6: [], histSubcats: {}, allSub: [], totalPorMes: [] };
+let _semPlanosCache = { meses6: [], histPlanos: {}, allPl: [], totalPorMes: [] };
+
+function renderSingleBarChart(canvasId, meses6, histData, selected, totalPorMes) {
+    let vol = (histData[selected] || Array(meses6.length).fill(0)).slice(0, meses6.length);
+    destroyChart(canvasId);
+    chartInstances[canvasId] = new Chart(document.getElementById(canvasId), {
+        type: 'bar',
+        data: { labels: meses6, datasets: [{ label: selected, data: vol, backgroundColor: getColor(selected), borderRadius: 4 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { display: false }, grid: { color: '#e8f9ef' } } },
+            plugins: {
+                legend: { display: false },
+                datalabels: {
+                    display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] > 0; },
+                    formatter: function(val, ctx) {
+                        let idx = ctx.dataIndex;
+                        let pct = totalPorMes[idx] > 0 ? ((val / totalPorMes[idx]) * 100).toFixed(1) : 0;
+                        return val + '\n(' + pct + '%)';
+                    },
+                    color: '#fff', font: { weight: 'bold', size: 11 },
+                    textAlign: 'center',
+                    anchor: 'center', align: 'center',
+                    offset: 0
+                }
+            },
+            layout: { padding: { top: 8 } }
+        }
+    });
+}
+
+function renderSemSubcatsChart(meses6, histSubcats, top5Sub, selected, totalPorMes) {
+    _semSubcatsCache = { meses6, histSubcats, allSub: top5Sub, totalPorMes };
+    const sel = document.getElementById('subcatSelectSem');
+    if (sel) {
+        sel.innerHTML = '';
+        // Adiciona APENAS as Top 5 subcategorias do semestre no select
+        top5Sub.forEach(s => sel.add(new Option(s, s)));
+        
+        // Mantém a seleção anterior se ela ainda fizer parte do Top 5 do novo semestre
+        if (selected && top5Sub.includes(selected)) {
+            sel.value = selected;
+        } else {
+            sel.value = top5Sub[0] || ''; 
+        }
+    }
+    let pick = sel ? sel.value : '';
+    if (!pick) return;
+    renderSingleBarChart('chartSemSubcats', meses6, histSubcats, pick, totalPorMes);
+}
+
+function updateSemSubcats(selected) {
+    const { meses6, histSubcats, allSub, totalPorMes } = _semSubcatsCache;
+    if (!meses6.length) return;
+    renderSingleBarChart('chartSemSubcats', meses6, histSubcats, selected, totalPorMes);
+}
+
+function renderSemPlanosChart(meses6, histPlanos, allPl, selected, totalPorMes) {
+    _semPlanosCache = { meses6, histPlanos, allPl, totalPorMes };
+    const planosOrdem = ['Diamante','Elite','Titânio Tier 3','Titânio Tier 2','Titânio Tier 1','Cobalto', 'Plus', 'Níquel'];
+    let orderedPl = planosOrdem.filter(p => allPl.includes(p));
+    allPl.forEach(p => { if (!orderedPl.includes(p)) orderedPl.push(p); });
+    
+    const sel = document.getElementById('planoSelectSem');
+    if (sel) {
+        sel.innerHTML = '';
+        // Adiciona TODOS os planos disponíveis no semestre
+        orderedPl.forEach(p => sel.add(new Option(p, p)));
+        
+        if (selected && orderedPl.includes(selected)) {
+            sel.value = selected;
+        } else {
+            sel.value = orderedPl[0] || '';
+        }
+    }
+    let pick = sel ? sel.value : '';
+    if (!pick) return;
+    renderSingleBarChart('chartSemPlanos', meses6, histPlanos, pick, totalPorMes);
+}
+
+function updateSemPlanos(selected) {
+    const { meses6, histPlanos, allPl, totalPorMes } = _semPlanosCache;
+    if (!meses6.length) return;
+    renderSingleBarChart('chartSemPlanos', meses6, histPlanos, selected, totalPorMes);
 }
 
 function renderSemestral() {
@@ -803,16 +1066,16 @@ function renderSemestral() {
     chartInstances['chartEvolucaoTaxa'] = new Chart(document.getElementById('chartEvolucaoTaxa'), {
         type: 'bar',
         data: { labels: meses6, datasets: [
-            { label: 'Taxa (%)', data: taxaMes, type: 'line', borderColor: '#f5a623', backgroundColor: '#f5a623', yAxisID: 'y1', tension: 0.3, borderWidth: 3 },
-            { label: 'Atendimentos', data: volAtdMes, type: 'line', borderColor: '#3498db', backgroundColor: '#3498db', yAxisID: 'y2', tension: 0.3, borderWidth: 2, borderDash: [5, 5] },
-            { label: 'Ouvidorias', data: volOuvMes, backgroundColor: '#00c16e', borderRadius: 4, yAxisID: 'y' }
+            { label: 'Taxa (%)', data: taxaMes, type: 'line', borderColor: '#f5a623', backgroundColor: '#f5a623', yAxisID: 'y1', tension: 0.3, borderWidth: 3, order: 0 },
+            { label: 'Atendimentos', data: volAtdMes, backgroundColor: 'rgba(52,152,219,0.25)', borderRadius: 4, yAxisID: 'y2', order: 2 },
+            { label: 'Ouvidorias', data: volOuvMes, backgroundColor: '#00c16e', borderRadius: 4, yAxisID: 'y', order: 1 }
         ]},
         options: { 
             responsive: true, maintainAspectRatio: false, 
             scales: { 
-                y: { type: 'linear', position: 'left', title: { display: true, text: 'Ouvidorias' }, grid: { color: '#e8f9ef' } }, 
+                y: { type: 'linear', position: 'left', title: { display: true, text: 'Volume' }, grid: { color: '#e8f9ef' } }, 
                 y1: { type: 'linear', position: 'right', title: { display: true, text: 'Taxa (%)' }, grid: { display: false } },
-                y2: { type: 'linear', display: false } 
+                y2: { type: 'linear', position: 'left', display: false, max: function(ctx) { return ctx.chart.scales.y ? ctx.chart.scales.y.max * 300 : undefined; } } 
             },
             plugins: { 
                 datalabels: { 
@@ -842,38 +1105,20 @@ function renderSemestral() {
         options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { align: 'start', anchor: 'end' } } }
     });
 
-    // 3. Top 5 Subcats Semestre (Stacked)
-    let top5Sub = Object.keys(subTotals).sort((a,b)=>subTotals[b]-subTotals[a]).slice(0,5);
-    destroyChart('chartSemSubcats');
-    chartInstances['chartSemSubcats'] = new Chart(document.getElementById('chartSemSubcats'), {
-        type: 'bar', data: { labels: meses6, datasets: top5Sub.map(s => ({ label: s, data: histSubcats[s], backgroundColor: getColor(s) })) },
-        options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
-    });
+    let totalPorMesSem = meses6.map(m =>
+        rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m).length
+    );
 
-    // 4. Planos mais Acionados Semestre (Stacked)
-    let top5Pl = Object.keys(planoTotals).sort((a,b)=>planoTotals[b]-planoTotals[a]).slice(0,5);
-    destroyChart('chartSemPlanos');
-    chartInstances['chartSemPlanos'] = new Chart(document.getElementById('chartSemPlanos'), {
-        type: 'bar', data: { labels: meses6, datasets: top5Pl.map(p => ({ label: p, data: histPlanos[p], backgroundColor: getColor(p) })) },
-        options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
-    });
+    let currentSubcat = document.getElementById('subcatSelectSem') ? document.getElementById('subcatSelectSem').value : null;
+    let currentPlano = document.getElementById('planoSelectSem') ? document.getElementById('planoSelectSem').value : null;
 
-    // 5. Top Planos x Subcategorias (Semestre)
-    let top5PlSem = Object.keys(planoTotalsSem).sort((a,b) => planoTotalsSem[b] - planoTotalsSem[a]).slice(0, 5);
-    let top5SubSem = Object.keys(subTotalsSem).sort((a,b) => subTotalsSem[b] - subTotalsSem[a]).slice(0, 5);
+    // 3. Volume e % por queixa (APENAS TOP 5 do semestre, atualizado dinamicamente)
+    let top5Sub = Object.keys(subTotals).sort((a,b)=>subTotals[b]-subTotals[a]).slice(0, 5);
+    renderSemSubcatsChart(meses6, histSubcats, top5Sub, currentSubcat, totalPorMesSem);
 
-    let dsSemPlanoSub = top5SubSem.map(sub => ({
-        label: sub,
-        data: top5PlSem.map(pl => (planoPorSubSem[pl] && planoPorSubSem[pl][sub]) ? planoPorSubSem[pl][sub] : 0),
-        backgroundColor: getColor(sub)
-    }));
-
-    destroyChart('chartSemPlanoSub');
-    chartInstances['chartSemPlanoSub'] = new Chart(document.getElementById('chartSemPlanoSub'), {
-        type: 'bar',
-        data: { labels: top5PlSem, datasets: dsSemPlanoSub },
-        options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
-    });
+    // 4. Volume e % por plano (TODOS os planos do semestre)
+    let allPl = Object.keys(planoTotals).sort((a,b)=>planoTotals[b]-planoTotals[a]);
+    renderSemPlanosChart(meses6, histPlanos, allPl, currentPlano, totalPorMesSem);
 
     // Atualiza os gráficos de tendências por Nível
     updateLevelCharts();
