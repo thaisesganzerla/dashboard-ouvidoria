@@ -821,6 +821,49 @@ function renderSemestral() {
 
     // Atualiza isoladamente os gráficos sensíveis ao filtro de Nível
     updateLevelCharts();
+ // ══ REGRA DE CORES FIXAS E CONSISTENTES ══
+const palette = ['#00c16e', '#099655', '#f5a623', '#d03b3b', '#9b59b6', '#3498db', '#e67e22', '#16a085', '#1abc9c', '#8e44ad', '#2c3e50'];
+
+const fixedColorMap = {
+    // Níveis Operacionais
+    'L1': '#00c16e',
+    'L2': '#099655',
+    'L3': '#f5a623',
+    'L4': '#d03b3b',
+
+    // Planos Bling
+    'Níquel': '#95a5a6',
+    'Plus': '#2ecc71',
+    'Cobalto': '#3498db',
+    'Titânio Tier 1': '#9b59b6',
+    'Titânio Tier 2': '#8e44ad',
+    'Titânio Tier 3': '#2c3e50',
+    'Elite': '#f1c40f',
+    'Diamante': '#1abc9c',
+
+    // Classificações Reais
+    'Dúvida': '#3498db',
+    'Problema': '#d03b3b',
+    'Sugestão': '#f5a623'
+};
+
+const dynamicColorCache = {};
+
+function getColor(label) {
+    if (!label) return '#95a5a6';
+    const clean = String(label).trim();
+
+    // 1. Procura se existe cor estática mapeada no objeto
+    if (fixedColorMap[clean]) return fixedColorMap[clean];
+
+    // 2. Se já foi mapeado dinamicamente nesta sessão, reutiliza a mesma cor
+    if (dynamicColorCache[clean]) return dynamicColorCache[clean];
+
+    // 3. Caso seja novo (ex: subcategoria/grupo novo), atribui uma cor da paleta e salva no cache
+    const idx = Object.keys(dynamicColorCache).length;
+    const assignedColor = palette[idx % palette.length];
+    dynamicColorCache[clean] = assignedColor;
+    return assignedColor;
 }
 </script>
 </body>
