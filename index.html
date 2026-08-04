@@ -59,7 +59,10 @@
   
   .page { display: none; }
   .page.active { display: flex; flex-direction: column; gap: 16px; }
+  
+  /* Oculta botão e mostra label na exportação */
   .exporting .export-btn { display: none !important; }
+  .exporting .export-only-label { display: block !important; }
 </style>
 </head>
 <body>
@@ -98,11 +101,19 @@
     <!-- ══ ABA 0 — VISÃO MENSAL ══ -->
     <div class="page active" id="page-0">
       
-      <div class="kpi-grid">
-        <div class="kpi-card"><div class="kv" id="kpiAtdMensal">-</div><div class="kt">Total Atendimentos</div></div>
-        <div class="kpi-card"><div class="kv" id="kpiTotalMensal">-</div><div class="kt">Total Ouvidorias</div></div>
-        <div class="kpi-card"><div class="kv" id="kpiTaxaMensal">-</div><div class="kt">Taxa de Ouvidoria</div></div>
-        <div class="kpi-card warning"><div class="kv" style="color:#b56a00;" id="kpiTMRMensal">-</div><div class="kt">TMR Médio (Dias)</div></div>
+      <!-- Container exportável para os KPIs Mensais -->
+      <div id="kpi-mensal-wrapper" style="position: relative; padding: 4px; margin: -4px;">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+          <!-- A data aparece apenas no print -->
+          <span class="export-only-label" id="label-kpi-mensal" style="display: none; font-size: 13px; font-weight: 600; color: #099655; border: 1px solid #c5ecd8; padding: 4px 12px; border-radius: 6px; background: #f4fdf7;"></span>
+          <button class="export-btn" onclick="exportCard('kpi-mensal-wrapper')">⬇ Exportar KPIs</button>
+        </div>
+        <div class="kpi-grid" style="margin-bottom: 0;">
+          <div class="kpi-card"><div class="kv" id="kpiAtdMensal">-</div><div class="kt">Total Atendimentos</div></div>
+          <div class="kpi-card"><div class="kv" id="kpiTotalMensal">-</div><div class="kt">Total Ouvidorias</div></div>
+          <div class="kpi-card"><div class="kv" id="kpiTaxaMensal">-</div><div class="kt">Taxa de Ouvidoria</div></div>
+          <div class="kpi-card warning"><div class="kv" style="color:#b56a00;" id="kpiTMRMensal">-</div><div class="kt">TMR Médio (Dias)</div></div>
+        </div>
       </div>
 
       <div class="charts-row">
@@ -161,10 +172,19 @@
 
     <!-- ══ ABA 1 — VISÃO SEMESTRAL ══ -->
     <div class="page" id="page-1">
-      <div class="kpi-grid">
-        <div class="kpi-card"><div class="kv" id="kpiAtdSemestral">-</div><div class="kt">Atendimentos (Semestre)</div></div>
-        <div class="kpi-card"><div class="kv" id="kpiTotalSemestral">-</div><div class="kt">Ouvidorias (Semestre)</div></div>
-        <div class="kpi-card"><div class="kv" id="kpiTaxaSemestral">-</div><div class="kt">Taxa Média no Semestre</div></div>
+      
+      <!-- Container exportável para os KPIs Semestrais -->
+      <div id="kpi-semestral-wrapper" style="position: relative; padding: 4px; margin: -4px;">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+          <!-- A data aparece apenas no print -->
+          <span class="export-only-label" id="label-kpi-semestral" style="display: none; font-size: 13px; font-weight: 600; color: #099655; border: 1px solid #c5ecd8; padding: 4px 12px; border-radius: 6px; background: #f4fdf7;"></span>
+          <button class="export-btn" onclick="exportCard('kpi-semestral-wrapper')">⬇ Exportar KPIs</button>
+        </div>
+        <div class="kpi-grid" style="margin-bottom: 0;">
+          <div class="kpi-card"><div class="kv" id="kpiAtdSemestral">-</div><div class="kt">Atendimentos (Semestre)</div></div>
+          <div class="kpi-card"><div class="kv" id="kpiTotalSemestral">-</div><div class="kt">Ouvidorias (Semestre)</div></div>
+          <div class="kpi-card"><div class="kv" id="kpiTaxaSemestral">-</div><div class="kt">Taxa Média no Semestre</div></div>
+        </div>
       </div>
 
       <div class="card" id="card-evolucao-taxa">
@@ -652,6 +672,9 @@ function renderMensal() {
     const m = document.getElementById('monthSelector').value;
     if (!m || !rawOuvidorias) return;
 
+    // Atualiza a tag invisível com a data exata
+    document.getElementById('label-kpi-mensal').innerText = 'Mês: ' + m;
+
     const dados = rawOuvidorias.filter(r => extractMonth(findValue(r, ['data da ouvidoria', 'data de abertura', 'data'])) === m);
     const totalOuv = dados.length;
     const totalAtd = rawAtendimentos[m] || 0;
@@ -966,10 +989,7 @@ function renderSemSubcatsChart(meses6, histSubcats, top5Sub, selected, totalPorM
     const sel = document.getElementById('subcatSelectSem');
     if (sel) {
         sel.innerHTML = '';
-        // Adiciona APENAS as Top 5 subcategorias do semestre no select
         top5Sub.forEach(s => sel.add(new Option(s, s)));
-        
-        // Mantém a seleção anterior se ela ainda fizer parte do Top 5 do novo semestre
         if (selected && top5Sub.includes(selected)) {
             sel.value = selected;
         } else {
@@ -996,9 +1016,7 @@ function renderSemPlanosChart(meses6, histPlanos, allPl, selected, totalPorMes) 
     const sel = document.getElementById('planoSelectSem');
     if (sel) {
         sel.innerHTML = '';
-        // Adiciona TODOS os planos disponíveis no semestre
         orderedPl.forEach(p => sel.add(new Option(p, p)));
-        
         if (selected && orderedPl.includes(selected)) {
             sel.value = selected;
         } else {
@@ -1021,6 +1039,9 @@ function renderSemestral() {
     let indexAtual = listaMeses.indexOf(document.getElementById('monthSelector').value);
     if(indexAtual === -1) indexAtual = listaMeses.length - 1;
     let meses6 = listaMeses.slice(Math.max(0, indexAtual - 5), indexAtual + 1);
+
+    // Atualiza a tag invisível com a data exata
+    document.getElementById('label-kpi-semestral').innerText = 'Mês: ' + document.getElementById('monthSelector').value;
     
     let totOuv = 0, totAtd = 0;
     let volOuvMes = [], volAtdMes = [], taxaMes = [], raMes = [];
@@ -1061,7 +1082,6 @@ function renderSemestral() {
     document.getElementById('kpiAtdSemestral').innerText = totAtd > 0 ? totAtd.toLocaleString('pt-BR') : '-';
     document.getElementById('kpiTaxaSemestral').innerText = totAtd > 0 ? ((totOuv/totAtd)*100).toFixed(2).replace('.', ',') + '%' : '0,00%';
 
-    // 1. Evolução Taxa x Volume x Atendimentos
     destroyChart('chartEvolucaoTaxa');
     chartInstances['chartEvolucaoTaxa'] = new Chart(document.getElementById('chartEvolucaoTaxa'), {
         type: 'bar',
@@ -1098,7 +1118,6 @@ function renderSemestral() {
         }
     });
 
-    // 2. Casos Reclame Aqui
     destroyChart('chartEvolucaoRA');
     chartInstances['chartEvolucaoRA'] = new Chart(document.getElementById('chartEvolucaoRA'), {
         type: 'bar', data: { labels: meses6, datasets: [{ label: 'Casos RA', data: raMes, backgroundColor: '#d03b3b', borderRadius: 4 }] },
@@ -1112,15 +1131,12 @@ function renderSemestral() {
     let currentSubcat = document.getElementById('subcatSelectSem') ? document.getElementById('subcatSelectSem').value : null;
     let currentPlano = document.getElementById('planoSelectSem') ? document.getElementById('planoSelectSem').value : null;
 
-    // 3. Volume e % por queixa (APENAS TOP 5 do semestre, atualizado dinamicamente)
     let top5Sub = Object.keys(subTotals).sort((a,b)=>subTotals[b]-subTotals[a]).slice(0, 5);
     renderSemSubcatsChart(meses6, histSubcats, top5Sub, currentSubcat, totalPorMesSem);
 
-    // 4. Volume e % por plano (TODOS os planos do semestre)
     let allPl = Object.keys(planoTotals).sort((a,b)=>planoTotals[b]-planoTotals[a]);
     renderSemPlanosChart(meses6, histPlanos, allPl, currentPlano, totalPorMesSem);
 
-    // Atualiza os gráficos de tendências por Nível
     updateLevelCharts();
 }
 </script>
