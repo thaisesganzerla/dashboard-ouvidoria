@@ -21,7 +21,7 @@
   
   /* Tabs - Verde Oficial Bling */
   .tabs-bar { background: #099655; padding: 10px 20px; display: flex; gap: 8px; }
-  .tab { flex: 1; padding: 99px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; color: #a4ecd0; background: transparent; border: 1.5px solid rgba(255,255,255,0.2); text-align: center; transition: all 0.15s; padding: 9px 10px; }
+  .tab { flex: 1; padding: 9px 10px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; color: #a4ecd0; background: transparent; border: 1.5px solid rgba(255,255,255,0.2); text-align: center; transition: all 0.15s; }
   .tab.active { background: #fff; color: #099655; border-color: #fff; font-weight: 600; }
   .tab:hover:not(.active) { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.4); }
 
@@ -67,7 +67,7 @@
   <!-- HEADER -->
   <div class="header">
     <div class="header-title"><p>Ouvidoria e Qualidade</p><h1>Dashboard Operacional</h1></div>
-    <img src="image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA04AAAGRCAIAAADdNXQFAAAQAElEQVR4Aez9d5wkR3bfi2akLe+r2ns73mGAATCYgV/sLrDLXe7SG5GiqEc9kRQp8+7nSU/6PKN/7rtXpETxStSVSJEUV6IRd7lcLLz3GD/TY9v7Lu9N+nuyB8AOMKa7uquysqpPfXJ6qtJEnPiejBO/OFGGpsdGcUMCSAAJIAEkgASQABJoTQIUPpAAEkACSAAJfEIA/0MCSKDVCNCt1iBsDxJAAkgACSABJIAEkMCnBFDqfUoC/98CAbwECSABJIAEkAASsDYBlHrW9g9ahwSQABJAAkigWQignZYkgFLPkm5Bo5AAEkACSAAJIAEkUAsCKPVqQRHLQAJIoHoCeAUSQAJIAAmYQAClngmQsQokgASQABJAAkgACTSGQLNIvcbQwVqRABJAAkgACSABJNDUBFDqNbX70HgkgASQwM4kgK1GAkhgswRQ6m2WFJ6HBJAAEkACSAAJIIGmI4BSr+lchgZXTwCvQAJIAAkgASSwUwmg1Nupnsd2IwEkgASQABLYmQR2WKtR6u0wh2NzkQASQAJIAAkggZ1EAKXeTvI2thUJIIHqCeAVSAAJIIGmJoBSr6ndh8YjASSABJAAEkACSOBeBFDq3YtO9cfwCiSABJAAEkACSAAJWIgASj0LOQNNQQJIAAkggdYigK1BAo0ngFKv8T5AC5AAEkACSAAJIAEkUCcCKPVqCBSpAX3/4An8G01mJAI4sA==" alt="Bling" style="height:44px; object-fit:contain;">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA04AAAGRCAIAAADdNXQFAAAQAElEQVR4Aez9d5wkR3bfi2akLe+r2ns73mGAATCYgV/sLrDLXe7SG5GiqEc9kRQp8+7nSU/6PKN/7rtXpETxStSVSJEUV6IRd7lcLLz3GD/TY9v7Lu9N+nuyB8AOMKa7uquysqpPfXJ6qtJEnPiejBO/OFGGpsdGcUMCSAAJIAEkgASQABJoTQIUPpAAEkACSAAJfEIA/0MCSKDVCNCt1iBsDxJAAkgACSABJIAEkMCnBFDqfUoC/98CAbwECSABJIAEkAASsDYBlHrW9g9ahwSQABJAAkigWQignZYkgFLPkm5Bo5AAEkACSAAJIAEkUAsCKPVqQRHLQAJIoHoCeAUSQAJIAAmYQAClngmQsQokgASQABJAAkgACTSGQLNIvcbQwVqRABJAAkgACSABJNDUBFDqNbX70HgkgASQwM4kgK1GAkhgswRQ6m2WFJ6HBJAAEkACSAAJIIGmI4BSr+lchgZXTwCvQAJIAAkgASSwUwmg1Nupnsd2IwEkgASQABLYmQR2WKtR6u0wh2NzkQASQAJIAAkggZ1EAKXeTvI2thUJIIHqCeAVSAAJIIGmJoBSr6ndh8YjASSABJAAEkACSOBeBFDq3YtO9cfwCiSABJAAEkACSAAJWIgASj0LOQNNQQJIAAkggdYigK1BAo0ngFKv8T5AC5AAEkACSAAJIAEkUCcCKPVqCBSpAX3/4An8G01mJAI4sA==" alt="Bling" style="height:44px; object-fit:contain;">
   </div>
 
   <!-- TABS -->
@@ -286,13 +286,52 @@ Chart.defaults.set('plugins.datalabels', {
     }
 });
 
+// ══ REGRA DE CORES FIXAS E CONSISTENTES ══
+const palette = ['#00c16e', '#099655', '#f5a623', '#d03b3b', '#9b59b6', '#3498db', '#e67e22', '#16a085', '#1abc9c', '#8e44ad', '#2c3e50'];
+
+const fixedColorMap = {
+    // Níveis Operacionais
+    'L1': '#00c16e',
+    'L2': '#099655',
+    'L3': '#f5a623',
+    'L4': '#d03b3b',
+
+    // Planos Bling
+    'Níquel': '#95a5a6',
+    'Plus': '#2ecc71',
+    'Cobalto': '#3498db',
+    'Titânio Tier 1': '#9b59b6',
+    'Titânio Tier 2': '#8e44ad',
+    'Titânio Tier 3': '#2c3e50',
+    'Elite': '#f1c40f',
+    'Diamante': '#1abc9c',
+
+    // Classificações Reais
+    'Dúvida': '#3498db',
+    'Problema': '#d03b3b',
+    'Sugestão': '#f5a623'
+};
+
+const dynamicColorCache = {};
+
+function getColor(label) {
+    if (!label) return '#95a5a6';
+    const clean = String(label).trim();
+
+    if (fixedColorMap[clean]) return fixedColorMap[clean];
+    if (dynamicColorCache[clean]) return dynamicColorCache[clean];
+
+    const idx = Object.keys(dynamicColorCache).length;
+    const assignedColor = palette[idx % palette.length];
+    dynamicColorCache[clean] = assignedColor;
+    return assignedColor;
+}
+
 let rawOuvidorias = null;
 let rawAtendimentos = {};
 let listaMeses = [];
 let chartInstances = {};
 let currentTab = 0;
-
-const palette = ['#00c16e', '#099655', '#f5a623', '#d03b3b', '#9b59b6', '#3498db', '#e67e22', '#16a085'];
 
 function setTab(i) {
   document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',i===j));
@@ -491,10 +530,10 @@ function updateLevelCharts(selectedLevel) {
     });
 
     // 1. Chart: Evolução de Níveis
-    let dsNiveis = Object.keys(histNiveis).map((n, i) => ({ 
+    let dsNiveis = Object.keys(histNiveis).map(n => ({ 
         label: n, 
         data: histNiveis[n], 
-        backgroundColor: palette[i % palette.length] 
+        backgroundColor: getColor(n) 
     }));
     destroyChart('chartEvolucaoNiveis');
     chartInstances['chartEvolucaoNiveis'] = new Chart(document.getElementById('chartEvolucaoNiveis'), {
@@ -506,18 +545,18 @@ function updateLevelCharts(selectedLevel) {
     // 2. Chart: Top Subcategoria por Nível
     let dsSubNivLinha = [];
     if (selectedLevel === 'ALL') {
-        dsSubNivLinha = Object.keys(histSubPorNivel).map((n, i) => {
+        dsSubNivLinha = Object.keys(histSubPorNivel).map(n => {
             let maxSub = Object.keys(histSubPorNivel[n]).sort((a,b)=> subTotals[b] - subTotals[a])[0]; 
             return { 
                 label: `${n} (${maxSub || 'Outros'})`, 
                 data: maxSub ? histSubPorNivel[n][maxSub] : [0,0,0,0,0,0], 
-                borderColor: palette[i % palette.length], 
+                borderColor: getColor(maxSub || n), 
                 tension: 0.3 
             };
         });
     } else {
         let topSubForLevel = Object.keys(subTotals).sort((a,b) => subTotals[b] - subTotals[a]).slice(0, 3);
-        dsSubNivLinha = topSubForLevel.map((sub, i) => {
+        dsSubNivLinha = topSubForLevel.map(sub => {
             let dataArr = [0,0,0,0,0,0];
             if (histSubPorNivel[selectedLevel] && histSubPorNivel[selectedLevel][sub]) {
                 dataArr = histSubPorNivel[selectedLevel][sub];
@@ -525,7 +564,7 @@ function updateLevelCharts(selectedLevel) {
             return {
                 label: `${selectedLevel}: ${sub}`,
                 data: dataArr,
-                borderColor: palette[i % palette.length],
+                borderColor: getColor(sub),
                 tension: 0.3
             };
         });
@@ -542,11 +581,10 @@ function updateLevelCharts(selectedLevel) {
     });
 
     // 3. Chart: Evolução por Classificação
-    let classifColors = palette.slice().reverse();
-    let dsClassif = Object.keys(histClassif).map((c, i) => ({ 
+    let dsClassif = Object.keys(histClassif).map(c => ({ 
         label: c, 
         data: histClassif[c], 
-        backgroundColor: classifColors[i % classifColors.length] 
+        backgroundColor: getColor(c) 
     }));
     destroyChart('chartSemClassificacao');
     chartInstances['chartSemClassificacao'] = new Chart(document.getElementById('chartSemClassificacao'), {
@@ -607,7 +645,7 @@ function renderMensal() {
     document.getElementById('kpiTaxaMensal').innerText = totalAtd > 0 ? ((totalOuv / totalAtd) * 100).toFixed(2).replace('.', ',') + '%' : '0,00%';
     document.getElementById('kpiTMRMensal').innerText = concluidos > 0 ? (totalDias / concluidos).toFixed(1).replace('.', ',') : '-';
 
-    // 0. Reclame Aqui Mensal (Linha Diária)
+    // 0. Reclame Aqui Mensal
     let diasSorted = Object.keys(raPorDia).sort((a,b) => parseInt(a)-parseInt(b));
     destroyChart('chartRAMensalLinha');
     chartInstances['chartRAMensalLinha'] = new Chart(document.getElementById('chartRAMensalLinha'), {
@@ -621,7 +659,7 @@ function renderMensal() {
     // 1. Volume por Nível (Rosca)
     destroyChart('chartNiveisMensal');
     chartInstances['chartNiveisMensal'] = new Chart(document.getElementById('chartNiveisMensal'), {
-        type: 'doughnut', data: { labels: Object.keys(niveis), datasets: [{ data: Object.values(niveis), backgroundColor: palette }] },
+        type: 'doughnut', data: { labels: Object.keys(niveis), datasets: [{ data: Object.values(niveis), backgroundColor: Object.keys(niveis).map(n => getColor(n)) }] },
         options: { responsive: true, maintainAspectRatio: false }
     });
 
@@ -629,7 +667,7 @@ function renderMensal() {
     let topPlanos = Object.entries(planos).sort((a,b)=>b[1]-a[1]).slice(0,5);
     destroyChart('chartPlanosMensal');
     chartInstances['chartPlanosMensal'] = new Chart(document.getElementById('chartPlanosMensal'), {
-        type: 'bar', data: { labels: topPlanos.map(s=>s[0]), datasets: [{ label: 'Volume', data: topPlanos.map(s=>s[1]), backgroundColor: '#3498db', borderRadius: 4 }] },
+        type: 'bar', data: { labels: topPlanos.map(s=>s[0]), datasets: [{ label: 'Volume', data: topPlanos.map(s=>s[1]), backgroundColor: topPlanos.map(s=>getColor(s[0])), borderRadius: 4 }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { align: 'start', anchor: 'end' } } }
     });
 
@@ -637,7 +675,7 @@ function renderMensal() {
     let topSub = Object.entries(subcats).sort((a,b)=>b[1]-a[1]).slice(0,5);
     destroyChart('chartTopSubcatsMensal');
     chartInstances['chartTopSubcatsMensal'] = new Chart(document.getElementById('chartTopSubcatsMensal'), {
-        type: 'bar', data: { labels: topSub.map(s=>s[0]), datasets: [{ label: 'Volume', data: topSub.map(s=>s[1]), backgroundColor: '#00c16e', borderRadius: 4 }] },
+        type: 'bar', data: { labels: topSub.map(s=>s[0]), datasets: [{ label: 'Volume', data: topSub.map(s=>s[1]), backgroundColor: topSub.map(s=>getColor(s[0])), borderRadius: 4 }] },
         options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { datalabels: { align: 'start', anchor: 'end' } } }
     });
 
@@ -650,15 +688,15 @@ function renderMensal() {
     });
     destroyChart('chartSubPorNivel');
     chartInstances['chartSubPorNivel'] = new Chart(document.getElementById('chartSubPorNivel'), {
-        type: 'bar', data: { labels: subNivelLabels, datasets: [{ label: 'Volume', data: subNivelData, backgroundColor: '#f5a623', borderRadius: 4 }] },
+        type: 'bar', data: { labels: subNivelLabels, datasets: [{ label: 'Volume', data: subNivelData, backgroundColor: subNivelLabels.map(lbl => getColor(lbl.split(' - ')[0])), borderRadius: 4 }] },
         options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { datalabels: { align: 'start', anchor: 'end' } } }
     });
 
     // 5. Top Planos x Subcategorias (Stacked)
     let p5 = topPlanos.map(p=>p[0]);
     let s5 = topSub.map(s=>s[0]);
-    let dsPlanoSub = s5.map((sub, i) => ({
-        label: sub, data: p5.map(pl => (planoPorSub[pl] && planoPorSub[pl][sub]) ? planoPorSub[pl][sub] : 0), backgroundColor: palette[i % palette.length]
+    let dsPlanoSub = s5.map(sub => ({
+        label: sub, data: p5.map(pl => (planoPorSub[pl] && planoPorSub[pl][sub]) ? planoPorSub[pl][sub] : 0), backgroundColor: getColor(sub)
     }));
     destroyChart('chartPlanoSub');
     chartInstances['chartPlanoSub'] = new Chart(document.getElementById('chartPlanoSub'), {
@@ -667,20 +705,19 @@ function renderMensal() {
     });
 
     // 6. Distribuição por Classificação
-    let classifColors = palette.slice().reverse();
     destroyChart('chartClassificacaoMensal');
     chartInstances['chartClassificacaoMensal'] = new Chart(document.getElementById('chartClassificacaoMensal'), {
-        type: 'doughnut', data: { labels: Object.keys(classif), datasets: [{ data: Object.values(classif), backgroundColor: classifColors }] },
+        type: 'doughnut', data: { labels: Object.keys(classif), datasets: [{ data: Object.values(classif), backgroundColor: Object.keys(classif).map(c => getColor(c)) }] },
         options: { responsive: true, maintainAspectRatio: false }
     });
 
     // 7. Classificação por Nível
     let niveisKeys = Object.keys(classifPorNivel).sort();
     let allClassifs = Object.keys(classif);
-    let dsClassifNivel = allClassifs.map((c, i) => ({
+    let dsClassifNivel = allClassifs.map(c => ({
         label: c,
         data: niveisKeys.map(n => classifPorNivel[n][c] || 0),
-        backgroundColor: classifColors[i % classifColors.length]
+        backgroundColor: getColor(c)
     }));
     destroyChart('chartClassifNivelMensal');
     chartInstances['chartClassifNivelMensal'] = new Chart(document.getElementById('chartClassifNivelMensal'), {
@@ -692,7 +729,7 @@ function renderMensal() {
     let topGp = Object.entries(grupos).sort((a,b)=>b[1]-a[1]).slice(0,10);
     destroyChart('chartGruposMensal');
     chartInstances['chartGruposMensal'] = new Chart(document.getElementById('chartGruposMensal'), {
-        type: 'bar', data: { labels: topGp.map(g=>g[0]), datasets: [{ label: 'Volume', data: topGp.map(g=>g[1]), backgroundColor: '#099655', borderRadius: 4 }] },
+        type: 'bar', data: { labels: topGp.map(g=>g[0]), datasets: [{ label: 'Volume', data: topGp.map(g=>g[1]), backgroundColor: topGp.map(g => getColor(g[0])), borderRadius: 4 }] },
         options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { datalabels: { align: 'start', anchor: 'end' }, legend: { display: false } } }
     });
 }
@@ -790,7 +827,7 @@ function renderSemestral() {
     let top5Sub = Object.keys(subTotals).sort((a,b)=>subTotals[b]-subTotals[a]).slice(0,5);
     destroyChart('chartSemSubcats');
     chartInstances['chartSemSubcats'] = new Chart(document.getElementById('chartSemSubcats'), {
-        type: 'bar', data: { labels: meses6, datasets: top5Sub.map((s, i) => ({ label: s, data: histSubcats[s], backgroundColor: palette[i%palette.length] })) },
+        type: 'bar', data: { labels: meses6, datasets: top5Sub.map(s => ({ label: s, data: histSubcats[s], backgroundColor: getColor(s) })) },
         options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
     });
 
@@ -798,18 +835,18 @@ function renderSemestral() {
     let top5Pl = Object.keys(planoTotals).sort((a,b)=>planoTotals[b]-planoTotals[a]).slice(0,5);
     destroyChart('chartSemPlanos');
     chartInstances['chartSemPlanos'] = new Chart(document.getElementById('chartSemPlanos'), {
-        type: 'bar', data: { labels: meses6, datasets: top5Pl.map((p, i) => ({ label: p, data: histPlanos[p], backgroundColor: palette[i%palette.length] })) },
+        type: 'bar', data: { labels: meses6, datasets: top5Pl.map(p => ({ label: p, data: histPlanos[p], backgroundColor: getColor(p) })) },
         options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
     });
 
-    // 5. Top Planos x Subcategorias (Semestre) - Eixo X com o nome dos Planos
+    // 5. Top Planos x Subcategorias (Semestre)
     let top5PlSem = Object.keys(planoTotalsSem).sort((a,b) => planoTotalsSem[b] - planoTotalsSem[a]).slice(0, 5);
     let top5SubSem = Object.keys(subTotalsSem).sort((a,b) => subTotalsSem[b] - subTotalsSem[a]).slice(0, 5);
 
-    let dsSemPlanoSub = top5SubSem.map((sub, i) => ({
+    let dsSemPlanoSub = top5SubSem.map(sub => ({
         label: sub,
         data: top5PlSem.map(pl => (planoPorSubSem[pl] && planoPorSubSem[pl][sub]) ? planoPorSubSem[pl][sub] : 0),
-        backgroundColor: palette[i % palette.length]
+        backgroundColor: getColor(sub)
     }));
 
     destroyChart('chartSemPlanoSub');
@@ -819,52 +856,8 @@ function renderSemestral() {
         options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
     });
 
-    // Atualiza isoladamente os gráficos sensíveis ao filtro de Nível
+    // Atualiza os gráficos de tendências por Nível
     updateLevelCharts();
- // ══ REGRA DE CORES FIXAS E CONSISTENTES ══
-const palette = ['#00c16e', '#099655', '#f5a623', '#d03b3b', '#9b59b6', '#3498db', '#e67e22', '#16a085', '#1abc9c', '#8e44ad', '#2c3e50'];
-
-const fixedColorMap = {
-    // Níveis Operacionais
-    'L1': '#00c16e',
-    'L2': '#099655',
-    'L3': '#f5a623',
-    'L4': '#d03b3b',
-
-    // Planos Bling
-    'Níquel': '#95a5a6',
-    'Plus': '#2ecc71',
-    'Cobalto': '#3498db',
-    'Titânio Tier 1': '#9b59b6',
-    'Titânio Tier 2': '#8e44ad',
-    'Titânio Tier 3': '#2c3e50',
-    'Elite': '#f1c40f',
-    'Diamante': '#1abc9c',
-
-    // Classificações Reais
-    'Dúvida': '#3498db',
-    'Problema': '#d03b3b',
-    'Sugestão': '#f5a623'
-};
-
-const dynamicColorCache = {};
-
-function getColor(label) {
-    if (!label) return '#95a5a6';
-    const clean = String(label).trim();
-
-    // 1. Procura se existe cor estática mapeada no objeto
-    if (fixedColorMap[clean]) return fixedColorMap[clean];
-
-    // 2. Se já foi mapeado dinamicamente nesta sessão, reutiliza a mesma cor
-    if (dynamicColorCache[clean]) return dynamicColorCache[clean];
-
-    // 3. Caso seja novo (ex: subcategoria/grupo novo), atribui uma cor da paleta e salva no cache
-    const idx = Object.keys(dynamicColorCache).length;
-    const assignedColor = palette[idx % palette.length];
-    dynamicColorCache[clean] = assignedColor;
-    return assignedColor;
-}
 }
 </script>
 </body>
