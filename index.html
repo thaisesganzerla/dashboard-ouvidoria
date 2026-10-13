@@ -1144,7 +1144,7 @@ function renderSemestral() {
         topSubVolPorMes.push(maxVol);
     });
 
-    // Renderiza o gráfico exibindo apenas o Top 1 de cada mês
+    // Renderiza o gráfico exibindo apenas o Top 1 de cada mês com rótulos inclinados
     destroyChart('chartSemSubcats');
     chartInstances['chartSemSubcats'] = new Chart(document.getElementById('chartSemSubcats'), {
         type: 'bar',
@@ -1157,7 +1157,8 @@ function renderSemestral() {
             }] 
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            responsive: true, 
+            maintainAspectRatio: false,
             scales: { 
                 x: { grid: { display: false } }, 
                 y: { beginAtZero: true, ticks: { display: false }, grid: { color: '#e8f9ef' } } 
@@ -1166,7 +1167,6 @@ function renderSemestral() {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        // Mostra o nome real da queixa ao passar o mouse por cima
                         title: function(context) {
                             return context[0].label + ' - ' + topSubNames[context[0].dataIndex];
                         }
@@ -1174,19 +1174,23 @@ function renderSemestral() {
                 },
                 datalabels: {
                     display: function(ctx) { return ctx.dataset.data[ctx.dataIndex] > 0; },
+                    rotation: -60, // Rotação para inclinar os nomes na diagonal
                     formatter: function(val, ctx) {
                         let idx = ctx.dataIndex;
                         let pct = totalPorMesSem[idx] > 0 ? ((val / totalPorMesSem[idx]) * 100).toFixed(1) : 0;
                         let name = topSubNames[idx];
-                        // Abrevia o nome se for muito longo para não quebrar o visual da barra
-                        let shortName = name.length > 18 ? name.substring(0, 18) + '...' : name;
+                        // Limita o tamanho se o nome for extremamente longo
+                        let shortName = name.length > 22 ? name.substring(0, 22) + '...' : name;
                         return shortName + '\n' + val + ' (' + pct + '%)';
                     },
-                    color: '#fff', font: { weight: 'bold', size: 10 },
-                    textAlign: 'center', anchor: 'center', align: 'center'
+                    color: '#fff', 
+                    font: { weight: 'bold', size: 10 },
+                    textAlign: 'center', 
+                    anchor: 'center', 
+                    align: 'center'
                 }
             },
-            layout: { padding: { top: 8 } }
+            layout: { padding: { top: 30, bottom: 10 } }
         }
     });
     // --- FIM DA NOVA LÓGICA ---
